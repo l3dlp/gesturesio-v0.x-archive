@@ -1,6 +1,5 @@
 #include <XnCppWrapper.h>
 
-
 class NIEngine
 {
 private:
@@ -10,6 +9,7 @@ private:
 	xn::DepthGenerator _depthGenerator;
 	xn::UserGenerator _userGenerator;
 	XnBool _shouldStop;
+	XnBool _running;
 
 public:
 	static NIEngine* GetInstance();
@@ -21,5 +21,12 @@ public:
 private:
 	NIEngine();
 	XnBool FileExists(const char *fn);
-
+	static void StartThread(void* arg);
+	void ProcessData();
 };
+
+typedef struct  
+{
+	NIEngine* _this;
+
+}THREADSTRUCT;

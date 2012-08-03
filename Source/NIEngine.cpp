@@ -1,4 +1,7 @@
 #include "NIEngine.h"
+#include "TinyThread/tinythread.h"
+
+using namespace tthread;
 
 #define OPENNI_CONFIG_PATH "../../../Data/openni.xml"  // cp-concern
 #define MAX_NUM_USERS 15
@@ -77,8 +80,19 @@ XnBool NIEngine::Start()
 	retVal = _niContext.StartGeneratingAll();
 	CHECK_RC(retVal,"StartGenerating");
 
-	// TODO: offload to a dedicated thread.
+	THREADSTRUCT* param = new THREADSTRUCT;
+	param->_this = this;
+	thread niThread(StartThread,param);
+	//niThread.join();
+	niThread.detach();
+
+	return true;
+}
+
+void NIEngine::ProcessData()
+{
 	_shouldStop = FALSE;
+	_running = TRUE;
 	XnUInt16 numOfUsers;
 	XnUserID users[MAX_NUM_USERS];
 	printf("start reading...\n");
@@ -110,11 +124,20 @@ XnBool NIEngine::Start()
 				rightHand.position.position.Z);
 		}
 	}
-	return true;
+	_running = FALSE;
+}
+
+void NIEngine::StartThread(void* arg)
+{
+	THREADSTRUCT* ts = (THREADSTRUCT*)arg;
+	ts->_this->ProcessData();
 }
 
 XnBool NIEngine::Stop()
 {
+	_shouldStop = TRUE;
+	while(_running == TRUE){} // Wait until the thread ends.
+
 	_niContext.StopGeneratingAll();
 
 	_niScriptNode.Release();

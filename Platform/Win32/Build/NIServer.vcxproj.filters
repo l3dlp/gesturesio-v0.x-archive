@@ -24,12 +24,18 @@
     <ClCompile Include="..\..\..\Source\SocketServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\Source\TinyThread\tinythread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Include\NIEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Include\SocketServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Include\TinyThread\tinythread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -71,10 +71,12 @@
     <ClCompile Include="..\..\..\Source\main.cpp" />
     <ClCompile Include="..\..\..\Source\NIEngine.cpp" />
     <ClCompile Include="..\..\..\Source\SocketServer.cpp" />
+    <ClCompile Include="..\..\..\Source\TinyThread\tinythread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Include\NIEngine.h" />
     <ClInclude Include="..\..\..\Include\SocketServer.h" />
+    <ClInclude Include="..\..\..\Include\TinyThread\tinythread.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
