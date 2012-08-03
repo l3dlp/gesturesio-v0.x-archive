@@ -15,6 +15,21 @@ NIEngine* NIEngine::_instance = NULL;
 	return retVal;						    \
 }
 
+void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
+{
+	NIEngine::GetInstance()->NewUser(generator,nId,pCookie);
+}
+
+void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
+{
+	NIEngine::GetInstance()->LostUser(generator,nId,pCookie);
+}
+
+void XN_CALLBACK_TYPE UserCalibration_CalibrationComplete(xn::SkeletonCapability& capability, XnUserID nId, XnCalibrationStatus eStatus, void* pCookie)
+{
+	NIEngine::GetInstance()->CalibrationCompleted(capability,nId,eStatus,pCookie);
+}
+
 NIEngine::NIEngine()
 {
 
@@ -67,16 +82,14 @@ XnBool NIEngine::Start()
 		return FALSE;
 	}
 
-	// TODO: register callbacks
-	//XnCallbackHandle hUserCallbacks, hCalibrationStart, hCalibrationComplete, hPoseDetected;
-	//retVal = _userGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks);
-	//CHECK_RC(retVal, "Register to user callbacks");
-	//nRetVal = g_UserGenerator.GetSkeletonCap().RegisterToCalibrationStart(UserCalibration_CalibrationStart, NULL, hCalibrationStart);
-	//CHECK_RC(nRetVal, "Register to calibration start");
-	//nRetVal = g_UserGenerator.GetSkeletonCap().RegisterToCalibrationComplete(UserCalibration_CalibrationComplete, NULL, hCalibrationComplete);
-	//CHECK_RC(nRetVal, "Register to calibration complete");
+	XnCallbackHandle hUserCallbacks, hCalibrationStart, hCalibrationComplete, hPoseDetected;
+	retVal = _userGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks);
+	CHECK_RC(retVal, "Register to user callbacks");
 
-	_userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL);
+	retVal = _userGenerator.GetSkeletonCap().RegisterToCalibrationComplete(UserCalibration_CalibrationComplete, NULL, hCalibrationComplete);
+	CHECK_RC(retVal, "Register to calibration complete");
+
+	_userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_UPPER);
 	retVal = _niContext.StartGeneratingAll();
 	CHECK_RC(retVal,"StartGenerating");
 
@@ -89,19 +102,37 @@ XnBool NIEngine::Start()
 	return true;
 }
 
+void NIEngine::NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
+{
+	_userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
+}
+
+void NIEngine::LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
+{
+
+}
+
+void NIEngine::CalibrationCompleted(xn::SkeletonCapability& capability, XnUserID nId, XnCalibrationStatus eStatus, void* pCookie)
+{
+	if (eStatus == XN_CALIBRATION_STATUS_OK)
+	{
+		// Calibration succeeded
+		_userGenerator.GetSkeletonCap().StartTracking(nId);
+	}
+}
+
 void NIEngine::ProcessData()
 {
 	_shouldStop = FALSE;
 	_running = TRUE;
 	XnUInt16 numOfUsers;
 	XnUserID users[MAX_NUM_USERS];
-	printf("start reading...\n");
+	
 	while (_shouldStop == FALSE)
 	{
 		_niContext.WaitOneUpdateAll(_userGenerator);
 		numOfUsers = MAX_NUM_USERS;
-		// print the torso information for the first user already tracking
-
+		
 		_userGenerator.GetUsers(users, numOfUsers);
 		int numTracked=0;
 		int userToPrint=-1;

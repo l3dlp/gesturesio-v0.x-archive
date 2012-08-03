@@ -15,6 +15,9 @@ public:
 	static NIEngine* GetInstance();
 	XnBool Start();
 	XnBool Stop();
+	void NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie);
+	void LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie);
+	void CalibrationCompleted(xn::SkeletonCapability& capability, XnUserID nId, XnCalibrationStatus eStatus, void* pCookie);
 
 	~NIEngine();
 
