@@ -1,4 +1,7 @@
 #include "SocketServer.h"
+#include "TinyThread/tinythread.h"
+
+using namespace tthread;
 
 #define MAX_PACKET 4096
 
@@ -12,13 +15,16 @@ SocketServer::~SocketServer()
 
 }
 
-void SocketServer::Launch()
+void SocketServer::StartThread(void* arg)
 {
-	_socket.Initialize();
-	_socket.Listen((const uint8*)"localhost",6789);  // cp-concern: uint8
+	SOCKETTHREADSTRUCT* ts = (SOCKETTHREADSTRUCT*)arg;
+	ts->_this->ProcessRequest();
+}
+
+void SocketServer::ProcessRequest()
+{
 	_shouldStop = FALSE;
 
-	// TODO: offload to dedicated thread
 	while (_shouldStop == FALSE)
 	{
 		if((_pClient = _socket.Accept()) != NULL)
@@ -37,6 +43,19 @@ void SocketServer::Launch()
 			delete _pClient;
 		}
 	}
+}
+
+void SocketServer::Launch()
+{
+	_socket.Initialize();
+	_socket.Listen((const uint8*)"localhost",6789);  // cp-concern: uint8
+	_shouldStop = FALSE;
+
+	SOCKETTHREADSTRUCT* param = new SOCKETTHREADSTRUCT;
+	param->_this = this;
+	thread niThread(StartThread,param);
+	//niThread.join();
+	niThread.detach();
 }
 
 void SocketServer::Terminate()

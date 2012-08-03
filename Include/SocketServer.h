@@ -14,4 +14,13 @@ public:
 	void Launch();
 	void Terminate();
 
+private:
+	static void StartThread(void* arg);
+	void ProcessRequest();
 };
+
+typedef struct  
+{
+	SocketServer* _this;
+
+}SOCKETTHREADSTRUCT;

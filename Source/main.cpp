@@ -8,8 +8,8 @@ int main(int argc, char** argv)
 	NIEngine* niEngine = NIEngine::GetInstance();
 	niEngine->Start();
 	printf("NIEngine Started.\n");
-	//SocketServer server;
-	//server.Launch();
+	SocketServer server;
+	server.Launch();
 
 	printf("Press key:\n");
 	// Wait for command
@@ -20,6 +20,9 @@ int main(int argc, char** argv)
 		{
 		case 'x':
 			niEngine->Stop();
+			break;
+		case 't':
+			server.Terminate();
 			break;
 		default:
 			break;
