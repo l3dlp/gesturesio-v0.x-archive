@@ -3,7 +3,7 @@
 
 using namespace tthread;
 
-#define OPENNI_CONFIG_PATH "../../../Data/openni.xml"  // cp-concern
+#define OPENNI_CONFIG_PATH "../../../../Data/openni.xml"  // cp-concern
 #define MAX_NUM_USERS 15
 
 NIEngine* NIEngine::_instance = NULL;
@@ -32,7 +32,11 @@ void XN_CALLBACK_TYPE UserCalibration_CalibrationComplete(xn::SkeletonCapability
 
 NIEngine::NIEngine()
 {
-
+	_running = FALSE;
+	memset(&_leftHand,0,sizeof(_leftHand));
+	memset(&_rightHand,0,sizeof(_rightHand));
+	memset(&_leftHandPosProjective,0,sizeof(_leftHandPosProjective));
+	memset(&_rightHandPosProjective,0,sizeof(_rightHandPosProjective));
 }
 
 NIEngine* NIEngine::GetInstance()
@@ -42,6 +46,11 @@ NIEngine* NIEngine::GetInstance()
 		_instance = new NIEngine();
 	}
 	return _instance;
+}
+
+XnBool NIEngine::IsRunning()
+{
+	return _running;
 }
 
 XnBool NIEngine::Start()
@@ -55,6 +64,9 @@ XnBool NIEngine::Start()
 		printf("Could not find OpenNI configuration file from %s\n",OPENNI_CONFIG_PATH);
 		return false;
 	}
+
+	printf("Starting NIEngine...\n");
+
 	retVal = _niContext.InitFromXmlFile(OPENNI_CONFIG_PATH,_niScriptNode,&errors);
 	if (retVal == XN_STATUS_NO_NODE_PRESENT)
 	{
@@ -99,6 +111,7 @@ XnBool NIEngine::Start()
 	//niThread.join();
 	niThread.detach();
 
+	printf("NIEngine Started.\n");
 	return true;
 }
 
@@ -132,30 +145,32 @@ void NIEngine::ProcessData()
 	{
 		_niContext.WaitOneUpdateAll(_userGenerator);
 		numOfUsers = MAX_NUM_USERS;
-		
+
 		_userGenerator.GetUsers(users, numOfUsers);
 		int numTracked=0;
 		int userToPrint=-1;
-		XnSkeletonJointTransformation leftHand;
-		XnSkeletonJointTransformation rightHand;
 
 		for(XnUInt16 i = 0; i < numOfUsers; i++)
 		{
 			if(_userGenerator.GetSkeletonCap().IsTracking(users[i]) == FALSE)
 				continue;
 
-			_userGenerator.GetSkeletonCap().GetSkeletonJoint(users[i],XN_SKEL_LEFT_HAND,leftHand);
-			_userGenerator.GetSkeletonCap().GetSkeletonJoint(users[i],XN_SKEL_RIGHT_HAND,rightHand);
-			printf("user %d: left hand at (%6.2f,%6.2f,%6.2f); rigt hand at (%6.2f,%6.2f,%6.2f)\n",users[i],
-				leftHand.position.position.X,
-				leftHand.position.position.Y,
-				leftHand.position.position.Z,
-				rightHand.position.position.X,
-				rightHand.position.position.Y,
-				rightHand.position.position.Z);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_LEFT_HAND,_leftHand);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_RIGHT_HAND,_rightHand);
+			_depthGenerator.ConvertRealWorldToProjective(1,&_leftHand.position,&_leftHandPosProjective);
+			_depthGenerator.ConvertRealWorldToProjective(1,&_rightHand.position,&_rightHandPosProjective);
+
+			//printf("user %d: left hand at (%6.2f,%6.2f,%6.2f); rigt hand at (%6.2f,%6.2f,%6.2f)\n",users[i],
+			//	_leftHand.position.X,
+			//	_leftHand.position.Y,
+			//	_leftHand.position.Z,
+			//	_rightHand.position.X,
+			//	_rightHand.position.Y,
+			//	_rightHand.position.Z);
 		}
 	}
 	_running = FALSE;
+
 }
 
 void NIEngine::StartThread(void* arg)
@@ -166,15 +181,22 @@ void NIEngine::StartThread(void* arg)
 
 XnBool NIEngine::Stop()
 {
+	if (_running == FALSE)
+	{
+		return TRUE;
+	}
+	
 	_shouldStop = TRUE;
-	while(_running == TRUE){} // Wait until the thread ends.
+	printf("Stopping NIEngine...\n");
 
-	_niContext.StopGeneratingAll();
+	// TODO: find proper way to release the resource and destruct the instance.
 
-	_niScriptNode.Release();
-	_depthGenerator.Release();
-	_userGenerator.Release();
-	_niContext.Release();
+	//_niContext.StopGeneratingAll();
+
+	//_niScriptNode.Release();
+	//_depthGenerator.Release();
+	//_userGenerator.Release();
+	//_niContext.Release();
 
 	return true;
 }
@@ -185,4 +207,24 @@ XnBool NIEngine::FileExists(const char *fn)
 	XnBool exists;
 	xnOSDoesFileExist(fn, &exists);
 	return exists;
+}
+
+XnSkeletonJointPosition NIEngine::GetLeftHandPos()
+{
+	return _leftHand;
+}
+
+XnSkeletonJointPosition NIEngine::GetRightHandPos()
+{
+	return _rightHand;
+}
+
+XnPoint3D NIEngine::GetLeftHandPosProjective()
+{
+	return _leftHandPosProjective;
+}
+
+XnPoint3D NIEngine::GetRightHandPosProjective()
+{
+	return _rightHandPosProjective;
 }

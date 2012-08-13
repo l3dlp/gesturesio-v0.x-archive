@@ -4,22 +4,24 @@
 
 int main(int argc, char** argv)
 {
-	printf("NIServer\n");
-	NIEngine* niEngine = NIEngine::GetInstance();
-	niEngine->Start();
-	printf("NIEngine Started.\n");
+	printf("NIServer Running...\n");
+
+	NIEngine::GetInstance()->Start();
+	
 	SocketServer server;
 	server.Launch();
 
-	printf("Press key:\n");
-	// Wait for command
-	while(1)
+	printf("Input command:\n t - terminate server\n x - exit\n");
+	bool shouldExit = FALSE;
+	while(shouldExit == FALSE)
 	{
 		int ch = getchar();
 		switch (ch)
 		{
 		case 'x':
-			niEngine->Stop();
+			server.Terminate();
+			NIEngine::GetInstance()->Stop();
+			shouldExit = TRUE;
 			break;
 		case 't':
 			server.Terminate();

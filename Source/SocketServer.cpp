@@ -1,9 +1,19 @@
 #include "SocketServer.h"
 #include "TinyThread/tinythread.h"
+#include "NIEngine.h"
+
+// Simple protocol:
+// server: localhost
+// port: 6789
+// command: GetHands
+// returned string format: 
+// "lx ly lz rx ry rz"  // 6 values representing lefthand x/y/z, righthand x/y/z, delimited by space. And the data type is float.
+
 
 using namespace tthread;
 
-#define MAX_PACKET 4096
+#define MAX_PACKET  1024
+#define BUFFER_SIZE ((MAX_PACKET)*4)  // sizeof(int)=4
 
 SocketServer::SocketServer()
 {
@@ -24,22 +34,34 @@ void SocketServer::StartThread(void* arg)
 void SocketServer::ProcessRequest()
 {
 	_shouldStop = FALSE;
+	char data[BUFFER_SIZE];
 
 	while (_shouldStop == FALSE)
 	{
+		memset(&data,0,BUFFER_SIZE);
 		if((_pClient = _socket.Accept()) != NULL)
 		{
-			printf("Received request.\n");
-
 			// Receive request from the client.
 			if (_pClient->Receive(MAX_PACKET))
 			{
-				printf("Sending response.\n");
+				if (_pClient->GetBytesReceived() <= BUFFER_SIZE)
+				{
+					memcpy(&data,_pClient->GetData(),_pClient->GetBytesReceived());
 
-				// Send response to client and close connection to the client
-				_pClient->Send((const uint8*)_pClient->GetData(),_pClient->GetBytesReceived());
-				_pClient->Close();
+					printf("Received request \"%s\". Sending response.\n",data);
+
+					if (strcmp(data,"GetHands") == 0)
+					{
+						XnPoint3D leftHandPos = NIEngine::GetInstance()->GetLeftHandPosProjective();
+						XnPoint3D rightHandPos = NIEngine::GetInstance()->GetRightHandPosProjective();
+						//printf("%f %f %f %f %f %f\n",leftHandPos.X,leftHandPos.Y,leftHandPos.Z,rightHandPos.X,rightHandPos.Y,rightHandPos.Z);
+						sprintf_s(data,"%f %f %f %f %f %f",leftHandPos.X,leftHandPos.Y,leftHandPos.Z,
+							rightHandPos.X,rightHandPos.Y,rightHandPos.Z);
+						_pClient->Send((const uint8*)&data,sizeof(data));
+					}
+				}
 			}
+			_pClient->Close();
 			delete _pClient;
 		}
 	}

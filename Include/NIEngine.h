@@ -10,6 +10,10 @@ private:
 	xn::UserGenerator _userGenerator;
 	XnBool _shouldStop;
 	XnBool _running;
+	XnSkeletonJointPosition _leftHand;
+	XnSkeletonJointPosition _rightHand;
+	XnPoint3D _leftHandPosProjective;
+	XnPoint3D _rightHandPosProjective;
 
 public:
 	static NIEngine* GetInstance();
@@ -18,8 +22,12 @@ public:
 	void NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie);
 	void LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie);
 	void CalibrationCompleted(xn::SkeletonCapability& capability, XnUserID nId, XnCalibrationStatus eStatus, void* pCookie);
-
 	~NIEngine();
+	XnBool IsRunning();
+	XnSkeletonJointPosition GetLeftHandPos();
+	XnSkeletonJointPosition GetRightHandPos();
+	XnPoint3D GetLeftHandPosProjective();
+	XnPoint3D GetRightHandPosProjective();
 
 private:
 	NIEngine();
