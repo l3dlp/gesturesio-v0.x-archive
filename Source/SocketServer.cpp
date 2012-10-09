@@ -50,22 +50,38 @@ void SocketServer::ProcessRequest()
 
 					printf("Received request \"%s\". Sending response.\n",data);
 
-					if (strcmp(data,"GetHands") == 0)
+					XnPoint3D leftHandPos = NIEngine::GetInstance()->GetLeftHandPosProjective();
+					XnPoint3D rightHandPos = NIEngine::GetInstance()->GetRightHandPosProjective();
+					XnPoint3D headPos = NIEngine::GetInstance()->GetHeadPosProjective();
+
+					if (strcmp(data,"getCoordsT") == 0)
 					{
-						XnPoint3D leftHandPos = NIEngine::GetInstance()->GetLeftHandPosProjective();
-						XnPoint3D rightHandPos = NIEngine::GetInstance()->GetRightHandPosProjective();
 						//printf("%f %f %f %f %f %f\n",leftHandPos.X,leftHandPos.Y,leftHandPos.Z,rightHandPos.X,rightHandPos.Y,rightHandPos.Z);
-						sprintf_s(data,"%f %f %f %f %f %f",leftHandPos.X,leftHandPos.Y,leftHandPos.Z,
-							rightHandPos.X,rightHandPos.Y,rightHandPos.Z);
-						_pClient->Send((const uint8*)&data,sizeof(data));
+						sprintf_s(data,"%f %f %f %f %f %f %f %f %f",leftHandPos.X,leftHandPos.Y,leftHandPos.Z,
+							rightHandPos.X,rightHandPos.Y,rightHandPos.Z,headPos.X,headPos.Y,headPos.Z);
+					}
+					else if (strcmp(data,"getCoordsX") == 0)
+					{
+						int length = 0;
+						length += sprintf_s(data,"<?xml version=\"1.0\" encoding=\"utf-8\">");
+						length += sprintf(data + length,"<coords>");
+						length += sprintf(data + length,"<leftHand x=\"%f\" y=\"%f\" z=\"%f\"></leftHand>",leftHandPos.X,leftHandPos.Y,leftHandPos.Z);
+						length += sprintf(data + length,"<rightHand x=\"%f\" y=\"%f\" z=\"%f\"></rightHand>",rightHandPos.X,rightHandPos.Y,rightHandPos.Z);
+						length += sprintf(data + length,"<headPos x=\"%f\" y=\"%f\" z=\"%f\"></headPos>",headPos.X,headPos.Y,headPos.Z);
+						sprintf(data + length,"</coords>");
+					}
+					else if (strcmp(data,"getCoordsJ") == 0)
+					{
+						int length = 0;
+						length += sprintf_s(data,"[");
+						length += sprintf(data + length,"\"coords\",{");
+						length += sprintf(data + length,"\"leftHandX\":\"%f\",\"leftHandY\":\"%f\",\"leftHandZ\":\"%f\",",leftHandPos.X,leftHandPos.Y,leftHandPos.Z);
+						length += sprintf(data + length,"\"rightHandX\":\"%f\",\"rightHandY\":\"%f\",\"rightHandZ\":\"%f\",",rightHandPos.X,rightHandPos.Y,rightHandPos.Z);
+						length += sprintf(data + length,"\"headPosX\":\"%f\",\"headPosY\":\"%f\",\"headPosZ\":\"%f\",",headPos.X,headPos.Y,headPos.Z);
+						sprintf(data + length,"}]");
 					}
 
-					if (strcmp(data,"GetHead") == 0)
-					{
-						XnPoint3D headPos = NIEngine::GetInstance()->GetHeadPosProjective();
-						sprintf_s(data,"%f %f %f",headPos.X,headPos.Y,headPos.Z);
-						_pClient->Send((const uint8*)&data,sizeof(data));
-					}
+					_pClient->Send((const uint8*)&data,sizeof(data));
 				}
 			}
 			_pClient->Close();

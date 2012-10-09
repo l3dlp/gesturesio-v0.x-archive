@@ -63,53 +63,75 @@ const int CROPBOX_WIDTH = 600; // mm
 const int CROPBOX_HEIGHT = 500; // mm
 const int CROPBOX_DEPTH = 3500; // mm
 
+int g_dataFormat = 0;
+
 bool Query()
 {
 	memset(&data,0,MAX_PACKET);
+
 	niSocket.Initialize();
+
+	// To see what format to ask the server
+	int dataFormat = g_dataFormat;
 
 	if (niSocket.Open((const UINT8*)"localhost",6789))
 	{
 		printf("Socket open.\n");
-		int bytesSent = niSocket.Send((const uint8*)"GetHands",8);
-		if(bytesSent == 8)
+		int bytesSent;
+		if(dataFormat == 1)
+		{
+			bytesSent = niSocket.Send((const uint8*)"getCoordsX",10);
+		}
+		else if(dataFormat == 2)
+		{
+			bytesSent = niSocket.Send((const uint8*)"getCoordsJ",10);
+		}
+		else
+		{
+			bytesSent = niSocket.Send((const uint8*)"getCoordsT",10);
+		}
+
+		if(bytesSent == 10)
 		{
 			niSocket.Receive(MAX_PACKET-1);
 			memcpy(&data,niSocket.GetData(),MAX_PACKET-1);
-			printf("echo: %s\n",data);
-			std::string s = data;
-			std::vector<std::string> positions = parse(s);
-			std::vector<std::string>::iterator it;
-			it = positions.begin();
-			leftHandPosX = atof((*it).c_str());
-			it++;
-			leftHandPosY = atof((*it).c_str());
-			it++;
-			leftHandPosZ = atof((*it).c_str());
-			it++;
-			rightHandPosX = atof((*it).c_str());
-			it++;
-			rightHandPosY = atof((*it).c_str());
-			it++;
-			rightHandPosZ = atof((*it).c_str());
-		}
+			printf("echo: %d %s\n",niSocket.GetBytesReceived(),data);
 
-		//int bytesSent = niSocket.Send((const uint8*)"GetHead",7);
-		//if(bytesSent == 7)
-		//{
-		//	niSocket.Receive(MAX_PACKET-1);
-		//	memcpy(&data,niSocket.GetData(),MAX_PACKET-1);
-		//	printf("echo: %s\n",data);
-		//	std::string s = data;
-		//	std::vector<std::string> positions = parse(s);
-		//	std::vector<std::string>::iterator it;
-		//	it = positions.begin();
-		//	headPosX = atof((*it).c_str());
-		//	it++;
-		//	headPosY = atof((*it).c_str());
-		//	it++;
-		//	headPosZ = atof((*it).c_str());
-		//}
+			// parse the data according to the format we ask
+			if (dataFormat == 1)
+			{
+				// xml
+			}
+			else if (dataFormat == 2)
+			{
+				// json
+			}
+			else
+			{
+				// plaint text parser
+				std::string s = data;
+				std::vector<std::string> positions = parse(s);
+				std::vector<std::string>::iterator it;
+				it = positions.begin();
+				leftHandPosX = atof((*it).c_str());
+				it++;
+				leftHandPosY = atof((*it).c_str());
+				it++;
+				leftHandPosZ = atof((*it).c_str());
+				it++;
+				rightHandPosX = atof((*it).c_str());
+				it++;
+				rightHandPosY = atof((*it).c_str());
+				it++;
+				rightHandPosZ = atof((*it).c_str());
+				it++;
+				headPosX = atof((*it).c_str());
+				it++;
+				headPosY = atof((*it).c_str());
+				it++;
+				headPosZ = atof((*it).c_str());
+			}
+		}
 
 		niSocket.Close();
 	}
@@ -290,7 +312,11 @@ void glutKeyboard (unsigned char key, int x, int y)
 		printf("Socket closed.\n");
 		exit(1);
 		break;
-	case'i':
+	case 'f':
+		g_dataFormat += 1;
+		g_dataFormat %= 3;// support 3 formats: plain text, xml, json. this command is to switch between them.
+		break;
+	case'q':
 		Query(); 	// Single inquire
 		break;
 	case 'l':
@@ -328,7 +354,7 @@ void glInit (int * pargc, char ** argv)
 
 int main(int argc, char** argv)
 {
-	printf("Usage:\n q - Query\n l - Query in loop\n x - exit\n");
+	printf("Usage:\n q - Query\n l - Query in loop\n f - switch data format\n x - exit\n");
 
 #ifdef USE_GLUT
 	glInit(&argc, argv);
