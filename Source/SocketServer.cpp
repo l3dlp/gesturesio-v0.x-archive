@@ -59,6 +59,13 @@ void SocketServer::ProcessRequest()
 							rightHandPos.X,rightHandPos.Y,rightHandPos.Z);
 						_pClient->Send((const uint8*)&data,sizeof(data));
 					}
+
+					if (strcmp(data,"GetHead") == 0)
+					{
+						XnPoint3D headPos = NIEngine::GetInstance()->GetHeadPosProjective();
+						sprintf_s(data,"%f %f %f",headPos.X,headPos.Y,headPos.Z);
+						_pClient->Send((const uint8*)&data,sizeof(data));
+					}
 				}
 			}
 			_pClient->Close();

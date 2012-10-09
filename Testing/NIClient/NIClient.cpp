@@ -27,6 +27,10 @@ float rightHandPosX = 0;
 float rightHandPosY = 0;
 float rightHandPosZ = 0;
 
+float headPosX = 0;
+float headPosY = 0;
+float headPosZ = 0;
+
 // Colors for the points
 float Colors[][3] =
 {
@@ -89,6 +93,24 @@ bool Query()
 			it++;
 			rightHandPosZ = atof((*it).c_str());
 		}
+
+		//int bytesSent = niSocket.Send((const uint8*)"GetHead",7);
+		//if(bytesSent == 7)
+		//{
+		//	niSocket.Receive(MAX_PACKET-1);
+		//	memcpy(&data,niSocket.GetData(),MAX_PACKET-1);
+		//	printf("echo: %s\n",data);
+		//	std::string s = data;
+		//	std::vector<std::string> positions = parse(s);
+		//	std::vector<std::string>::iterator it;
+		//	it = positions.begin();
+		//	headPosX = atof((*it).c_str());
+		//	it++;
+		//	headPosY = atof((*it).c_str());
+		//	it++;
+		//	headPosZ = atof((*it).c_str());
+		//}
+
 		niSocket.Close();
 	}
 
@@ -227,6 +249,13 @@ void glutDisplay (void)
 	// Draw hand points
 	DrawPoint(lx,ly,lz,1);
 	DrawPoint(rx,ry,rz,4);
+
+	// Draw head point
+	float hx = headPosX / CROPBOX_WIDTH * GL_WIN_SIZE_X;
+	float hy = headPosY / CROPBOX_HEIGHT * GL_WIN_SIZE_Y;
+	float hz = (1 - headPosZ / CROPBOX_DEPTH) * 100; 
+	DrawPoint(hx,hy,hz,6);
+
 #endif
 
 #ifdef USE_GLUT

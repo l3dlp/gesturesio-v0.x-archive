@@ -157,8 +157,11 @@ void NIEngine::ProcessData()
 
 			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_LEFT_HAND,_leftHand);
 			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_RIGHT_HAND,_rightHand);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_HEAD,_headPos);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointOrientation(users[i],XN_SKEL_HEAD,_headOrient);
 			_depthGenerator.ConvertRealWorldToProjective(1,&_leftHand.position,&_leftHandPosProjective);
 			_depthGenerator.ConvertRealWorldToProjective(1,&_rightHand.position,&_rightHandPosProjective);
+			_depthGenerator.ConvertRealWorldToProjective(1,&_headPos.position,&_headPosProjective);
 
 			//printf("user %d: left hand at (%6.2f,%6.2f,%6.2f); rigt hand at (%6.2f,%6.2f,%6.2f)\n",users[i],
 			//	_leftHand.position.X,
@@ -227,4 +230,9 @@ XnPoint3D NIEngine::GetLeftHandPosProjective()
 XnPoint3D NIEngine::GetRightHandPosProjective()
 {
 	return _rightHandPosProjective;
+}
+
+XnPoint3D NIEngine::GetHeadPosProjective()
+{
+	return _headPosProjective;
 }

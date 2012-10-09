@@ -12,8 +12,11 @@ private:
 	XnBool _running;
 	XnSkeletonJointPosition _leftHand;
 	XnSkeletonJointPosition _rightHand;
+	XnSkeletonJointPosition _headPos;
+	XnSkeletonJointOrientation _headOrient;
 	XnPoint3D _leftHandPosProjective;
 	XnPoint3D _rightHandPosProjective;
+	XnPoint3D _headPosProjective;
 
 public:
 	static NIEngine* GetInstance();
@@ -28,6 +31,7 @@ public:
 	XnSkeletonJointPosition GetRightHandPos();
 	XnPoint3D GetLeftHandPosProjective();
 	XnPoint3D GetRightHandPosProjective();
+	XnPoint3D GetHeadPosProjective();
 
 private:
 	NIEngine();
