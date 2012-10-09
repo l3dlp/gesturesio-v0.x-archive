@@ -3,7 +3,7 @@
 
 using namespace tthread;
 
-#define OPENNI_CONFIG_PATH "../../../../Data/openni.xml"  // cp-concern
+#define OPENNI_CONFIG_PATH "./Data/openni.xml"  // cp-concern
 #define MAX_NUM_USERS 15
 
 NIEngine* NIEngine::_instance = NULL;
