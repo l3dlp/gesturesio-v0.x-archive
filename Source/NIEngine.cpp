@@ -1,10 +1,13 @@
 #include "NIEngine.h"
+#include <math.h>
 #include "TinyThread/tinythread.h"
 
 using namespace tthread;
 
 #define OPENNI_CONFIG_PATH "./Data/openni.xml"  // cp-concern
 #define MAX_NUM_USERS 15
+
+#define GESTURE_DIST_THRSH	100    // The threshold of distance between gesture detected hand position and given hand position
 
 NIEngine* NIEngine::_instance = NULL;
 
@@ -13,6 +16,18 @@ NIEngine* NIEngine::_instance = NULL;
 {								    \
 	printf("%s failed: %s\n", what, xnGetStatusString(retVal));    \
 	return retVal;						    \
+}
+
+void XN_CALLBACK_TYPE Gesture_Recognized(xn::GestureGenerator& generator,const XnChar* strGesture, 
+										const XnPoint3D* pIDPosition,const XnPoint3D* pEndPosition, void* pCookie)
+{
+	NIEngine::GetInstance()->GestureRecognized(generator,strGesture,pIDPosition,pEndPosition,pCookie);
+}
+
+void XN_CALLBACK_TYPE Gesture_Progress(xn::GestureGenerator& generator,const XnChar* strGesture, 
+									   const XnPoint3D* pPosition, XnFloat fProgress, void* pCookie)
+{
+	
 }
 
 void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
@@ -37,6 +52,7 @@ NIEngine::NIEngine()
 	memset(&_rightHand,0,sizeof(_rightHand));
 	memset(&_leftHandPosProjective,0,sizeof(_leftHandPosProjective));
 	memset(&_rightHandPosProjective,0,sizeof(_rightHandPosProjective));
+	memset(&_headPosProjective,0,sizeof(_headPosProjective));
 }
 
 NIEngine* NIEngine::GetInstance()
@@ -87,6 +103,8 @@ XnBool NIEngine::Start()
 	retVal = _niContext.FindExistingNode(XN_NODE_TYPE_USER,_userGenerator);
 	CHECK_RC(retVal,"No user generator");
 
+	retVal = _niContext.FindExistingNode(XN_NODE_TYPE_GESTURE,_gestureGenerator);
+	CHECK_RC(retVal,"No gesture generator");
 
 	if (_userGenerator.IsCapabilitySupported(XN_CAPABILITY_SKELETON) != TRUE)
 	{
@@ -94,7 +112,11 @@ XnBool NIEngine::Start()
 		return FALSE;
 	}
 
-	XnCallbackHandle hUserCallbacks, hCalibrationStart, hCalibrationComplete, hPoseDetected;
+	XnCallbackHandle hGesture, hUserCallbacks, hCalibrationStart, hCalibrationComplete, hPoseDetected;
+
+	retVal = _gestureGenerator.RegisterGestureCallbacks(Gesture_Recognized,Gesture_Progress,NULL,hGesture);
+	CHECK_RC(retVal,"Register to gesture callbacks");
+
 	retVal = _userGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks);
 	CHECK_RC(retVal, "Register to user callbacks");
 
@@ -104,6 +126,9 @@ XnBool NIEngine::Start()
 	_userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_UPPER);
 	retVal = _niContext.StartGeneratingAll();
 	CHECK_RC(retVal,"StartGenerating");
+
+	_gestureGenerator.AddGesture("Click",NULL);
+	_gestureGenerator.AddGesture("Wave",NULL);
 
 	THREADSTRUCT* param = new THREADSTRUCT;
 	param->_this = this;
@@ -115,20 +140,63 @@ XnBool NIEngine::Start()
 	return true;
 }
 
+float NIEngine::PointDist(const XnPoint3D* p1, const XnPoint3D* p2)
+{
+	return sqrt(pow(p1->X - p2->X,2) + pow(p1->Y - p2->Y,2) + pow(p1->Z - p2->Z,2));
+}
+
+void NIEngine::GestureRecognized(xn::GestureGenerator& generator,const XnChar* strGesture, 
+								 const XnPoint3D* pIDPosition,const XnPoint3D* pEndPosition, void* pCookie)
+{
+	// Identify which hand holds this gesture
+	float leftDist = PointDist(&_leftHand.position,pEndPosition);
+	float rightDist = PointDist(&_rightHand.position,pEndPosition);
+
+	GESTURERECORD gestureRec;
+	gestureRec.name = strGesture;
+
+	gestureRec.timeStamp = 0; //TODO: add current timestamp
+
+	if (rightDist < GESTURE_DIST_THRSH)
+	{
+		gestureRec.isRightHand = true;
+	}
+	else if (leftDist < GESTURE_DIST_THRSH)
+	{
+		gestureRec.isRightHand = false;
+	}
+	else
+	{
+		gestureRec.timeStamp = -1.0f; //invalid
+	}
+	printf("%d hand detected.%f %f \n",gestureRec.isRightHand,leftDist,rightDist);
+
+	_gestures.push_back(gestureRec);
+
+	//printf("idp %f %f %f\n",pIDPosition->X,pIDPosition->Y,pIDPosition->Z);
+	//printf("enp %f %f %f\n",pEndPosition->X,pEndPosition->Y,pEndPosition->Z);
+	//printf("rh %f %f %f\n",_rightHand.position.X,_rightHand.position.Y,_rightHand.position.Z);
+	//printf("pos dis %f\n",PointDist(pIDPosition,pEndPosition));
+	//printf("Gesture %s detected ld %f rd %f\n",strGesture,leftDist,rightDist);
+	
+}
+
 void NIEngine::NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
 {
+	printf("User %d found \n",nId);
 	_userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
 }
 
 void NIEngine::LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
 {
-
+	printf("User %d lost \n",nId);
 }
 
 void NIEngine::CalibrationCompleted(xn::SkeletonCapability& capability, XnUserID nId, XnCalibrationStatus eStatus, void* pCookie)
 {
 	if (eStatus == XN_CALIBRATION_STATUS_OK)
 	{
+		printf("User %d calibrated.\n",nId);
 		// Calibration succeeded
 		_userGenerator.GetSkeletonCap().StartTracking(nId);
 	}
@@ -235,4 +303,20 @@ XnPoint3D NIEngine::GetRightHandPosProjective()
 XnPoint3D NIEngine::GetHeadPosProjective()
 {
 	return _headPosProjective;
+}
+
+GESTURERECORD NIEngine::GetGesture()
+{
+	GESTURERECORD gestureRec;
+	
+	if (_gestures.empty() == false)
+	{
+		gestureRec = _gestures.back();
+		_gestures.pop_back();
+	}
+	else
+	{
+		gestureRec.timeStamp = -1.0f;
+	}
+	return gestureRec;
 }

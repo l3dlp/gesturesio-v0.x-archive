@@ -31,6 +31,9 @@ float headPosX = 0;
 float headPosY = 0;
 float headPosZ = 0;
 
+std::string leftGesture = "NONE";
+std::string rightGesture = "NONE";
+
 // Colors for the points
 float Colors[][3] =
 {
@@ -76,7 +79,7 @@ bool Query()
 
 	if (niSocket.Open((const UINT8*)"localhost",6789))
 	{
-		printf("Socket open.\n");
+		//printf("Socket open.\n");
 		int bytesSent;
 		if(dataFormat == 1)
 		{
@@ -95,7 +98,7 @@ bool Query()
 		{
 			niSocket.Receive(MAX_PACKET-1);
 			memcpy(&data,niSocket.GetData(),MAX_PACKET-1);
-			printf("echo: %d %s\n",niSocket.GetBytesReceived(),data);
+			//printf("echo: %d %s\n",niSocket.GetBytesReceived(),data);
 
 			// parse the data according to the format we ask
 			if (dataFormat == 1)
@@ -130,6 +133,15 @@ bool Query()
 				headPosY = atof((*it).c_str());
 				it++;
 				headPosZ = atof((*it).c_str());
+				it++;
+				leftGesture = *it;
+				it++;
+				rightGesture = *it;
+				if (rightGesture.compare("NONE") != 0)
+				{
+					printf("%s %s\n",leftGesture.c_str(),rightGesture.c_str());
+				}
+				
 			}
 		}
 
@@ -268,9 +280,23 @@ void glutDisplay (void)
 	float rx = rightHandPosX / CROPBOX_WIDTH * GL_WIN_SIZE_X;
 	float ry = rightHandPosY / CROPBOX_HEIGHT * GL_WIN_SIZE_Y;
 	float rz = (1 - rightHandPosZ / CROPBOX_DEPTH) * 100;
+
+	int leftHandColor = 1;
+	int rightHandColor = 4;
+
+	// enlarge the mark as indication of gesture event
+	if (leftGesture.compare("NONE") != 0)
+	{
+		lz *= 4;
+	}
+	if (rightGesture.compare("NONE") != 0)
+	{
+		rz *= 4;
+	}
+
 	// Draw hand points
-	DrawPoint(lx,ly,lz,1);
-	DrawPoint(rx,ry,rz,4);
+	DrawPoint(lx,ly,lz,leftHandColor);
+	DrawPoint(rx,ry,rz,rightHandColor);
 
 	// Draw head point
 	float hx = headPosX / CROPBOX_WIDTH * GL_WIN_SIZE_X;
