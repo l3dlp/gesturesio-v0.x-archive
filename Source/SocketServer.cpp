@@ -56,25 +56,34 @@ void SocketServer::ProcessRequest()
 					if (Fubi::isUserTracked(closestID))
 					{
 						XnPoint3D leftHandPos;
+						XnPoint3D leftHandPosProjective;
 						XnPoint3D rightHandPos;
+						XnPoint3D rightHandPosProjective;
 						XnPoint3D headPos;
+						XnPoint3D headPosProjective;
 						float leftHandConf;
 						float rightHandConf;
 						float headConf;
 						double timeStamp;
 
+						xn::DepthGenerator* depthGenerator = Fubi::getDepthGenerator();
+
 						FubiUser::UserTrackingInfo* pInfo = Fubi::getCurrentUserTrackingInfo(closestID);
 						Fubi::getSkeletonJointPosition(pInfo,XnSkeletonJoint::XN_SKEL_LEFT_HAND,
 													leftHandPos.X,leftHandPos.Y,leftHandPos.Z,leftHandConf,timeStamp);
-						
+						depthGenerator->ConvertRealWorldToProjective(1,&leftHandPos,&leftHandPosProjective);
+
 						Fubi::getSkeletonJointPosition(pInfo,XnSkeletonJoint::XN_SKEL_RIGHT_HAND,
 							rightHandPos.X,rightHandPos.Y,rightHandPos.Z,rightHandConf,timeStamp);
+						depthGenerator->ConvertRealWorldToProjective(1,&rightHandPos,&rightHandPosProjective);
 						
 						Fubi::getSkeletonJointPosition(pInfo,XnSkeletonJoint::XN_SKEL_HEAD,
 							headPos.X,headPos.Y,headPos.Z,headConf,timeStamp);
+						depthGenerator->ConvertRealWorldToProjective(1,&headPos,&headPosProjective);
 
-						sprintf_s(data,"%f %f %f %f %f %f %f %f %f",leftHandPos.X,leftHandPos.Y,leftHandPos.Z,
-							rightHandPos.X,rightHandPos.Y,rightHandPos.Z,headPos.X,headPos.Y,headPos.Z);
+						sprintf_s(data,"%f %f %f %f %f %f %f %f %f",leftHandPosProjective.X,leftHandPosProjective.Y,leftHandPosProjective.Z,
+																	rightHandPosProjective.X,rightHandPosProjective.Y,rightHandPosProjective.Z,
+																	headPosProjective.X,headPosProjective.Y,headPosProjective.Z);
 					}
 
 					_pClient->Send((const uint8*)&data,sizeof(data));
