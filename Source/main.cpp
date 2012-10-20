@@ -12,6 +12,7 @@ using namespace std;
 using namespace tthread;
 
 #define FUBI_CONFIG_PATH "./Data/SamplesConfig.xml"  // cp-concern
+#define FUBI_RECOGNIZER_PATH "./Data/SampleRecognizers.xml"
 
 bool CheckLicense()
 {
@@ -35,15 +36,36 @@ bool CheckLicense()
 	return true;
 }
 
+// Function called each frame for all tracked users
+void checkPostures(XnUserID userID)
+{
+	if (Fubi::isPostureCombinationDetected(Fubi::WAVE_RIGHT_HAND,userID))
+	{
+		printf("right hand waving detected. \n");
+	}
+}
+
 bool shouldStop = FALSE;
 
 void NIWorkerProc(void*)
 {
-	Fubi::init(FUBI_CONFIG_PATH,NULL,XN_SKEL_PROFILE_HEAD_HANDS);
+	Fubi::init(FUBI_CONFIG_PATH);
+
+	Fubi::autoStartPostureCombinationDetection(true);
+	Fubi::loadRecognizersFromXML(FUBI_RECOGNIZER_PATH);
 
 	while (shouldStop == FALSE)
 	{
-		Fubi::update();
+		if (Fubi::isInitialized())
+		{
+			Fubi::update();
+
+			XnUserID closestID = Fubi::getClosestUserID();  // Select closest user as current active user.
+			if (Fubi::isUserTracked(closestID))
+			{
+				checkPostures(closestID);
+			}
+		}
 	}
 
 	Fubi::release();

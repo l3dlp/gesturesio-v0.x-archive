@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!DOCTYPE FubiRecognizers SYSTEM "FubiRecognizers.dtd">
+<FubiRecognizers>
+  <JointOrientationRecognizer name="LeanLeft">
+    <Joint name="torso"/>
+    <MaxDegrees z="-15"/>
+  </JointOrientationRecognizer>
+  <JointOrientationRecognizer name="LeanFront">
+    <Joint name="torso"/>
+    <MinDegrees x="15"/>
+  </JointOrientationRecognizer>
+  <JointOrientationRecognizer name="LeanBack">
+    <Joint name="torso"/>
+    <MaxDegrees x="-15"/>
+  </JointOrientationRecognizer>
+  <JointRelationRecognizer name="HandsTogether">
+    <Joints main="rightHand" relative="leftHand"/>
+    <MaxValues dist="200"/>
+  </JointRelationRecognizer>
+  <JointRelationRecognizer name="RightHandInHeadHeight" visibility="hidden">
+    <Joints main="rightHand" relative="head"/>
+    <MaxValues y="150"/>
+    <MinValues y="-150"/>
+  </JointRelationRecognizer>
+  <JointRelationRecognizer name="LeftHandInHeadHeight" visibility="hidden">
+    <Joints main="leftHand" relative="head"/>
+    <MaxValues y="150"/>
+    <MinValues y="-150"/>    
+  </JointRelationRecognizer>
+  <PostureCombinationRecognizer name="HandsToghetherInHeadHeight">
+    <State minDuration="0.1">
+      <Recognizer name="HandsTogether"/>
+      <Recognizer name="RightHandInHeadHeight"/>
+      <Recognizer name="LeftHandInHeadHeight"/>
+    </State>
+  </PostureCombinationRecognizer>
+  <JointRelationRecognizer name="rightHandNearHead">
+    <Joints main="rightHand" relative="head"/>
+    <MaxValues dist="200"/>
+  </JointRelationRecognizer>
+  <LinearMovementRecognizer name="rightHandRight" visibility="hidden">
+    <Joints main="rightHand" relative="rightShoulder"/>
+    <Direction x="1" y="0" z="0"/>
+    <Speed min="1200"/>
+  </LinearMovementRecognizer>
+  <LinearMovementRecognizer name="rightHandLeftDown" visibility="hidden">
+    <Joints main="rightHand" relative="rightShoulder"/>
+    <Direction x="-1" y="-1" z="0"/>
+    <Speed min="1200"/>
+  </LinearMovementRecognizer>
+  <PostureCombinationRecognizer name="Zorro">
+    <State maxDuration="1.2" minDuration="0.05" timeForTransition="0.4">
+      <Recognizer name="rightHandRight"/>
+    </State>
+    <State maxDuration="1.2" minDuration="0.05" timeForTransition="0.4">
+      <Recognizer name="rightHandLeftDown"/>
+    </State>
+    <State minDuration="0.05">
+      <Recognizer name="rightHandRight"/>
+    </State>
+  </PostureCombinationRecognizer>
+  <LinearMovementRecognizer name="rightHandStill" visibility="hidden">
+    <Joints main="rightHand" relative="rightShoulder"/>
+    <Speed min="0" max="300"/>
+  </LinearMovementRecognizer>
+  <PostureCombinationRecognizer name="pointLong">
+    <State maxDuration="5" minDuration="1">
+      <Recognizer name="PointingRight"/>
+      <Recognizer name="rightHandStill"/>
+    </State>
+  </PostureCombinationRecognizer>
+</FubiRecognizers>
