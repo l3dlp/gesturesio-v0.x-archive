@@ -114,34 +114,28 @@ bool Query()
 				// plaint text parser
 				std::string s = data;
 				std::vector<std::string> positions = parse(s);
-				std::vector<std::string>::iterator it;
-				it = positions.begin();
-				leftHandPosX = atof((*it).c_str());
-				it++;
-				leftHandPosY = atof((*it).c_str());
-				it++;
-				leftHandPosZ = atof((*it).c_str());
-				it++;
-				rightHandPosX = atof((*it).c_str());
-				it++;
-				rightHandPosY = atof((*it).c_str());
-				it++;
-				rightHandPosZ = atof((*it).c_str());
-				it++;
-				headPosX = atof((*it).c_str());
-				it++;
-				headPosY = atof((*it).c_str());
-				it++;
-				headPosZ = atof((*it).c_str());
-				it++;
-				leftGesture = *it;
-				it++;
-				rightGesture = *it;
-				if (rightGesture.compare("NONE") != 0)
+				if (positions.size() >= 9)
 				{
-					printf("%s %s\n",leftGesture.c_str(),rightGesture.c_str());
+					std::vector<std::string>::iterator it;
+					it = positions.begin();
+					leftHandPosX = atof((*it).c_str());
+					it++;
+					leftHandPosY = atof((*it).c_str());
+					it++;
+					leftHandPosZ = atof((*it).c_str());
+					it++;
+					rightHandPosX = atof((*it).c_str());
+					it++;
+					rightHandPosY = atof((*it).c_str());
+					it++;
+					rightHandPosZ = atof((*it).c_str());
+					it++;
+					headPosX = atof((*it).c_str());
+					it++;
+					headPosY = atof((*it).c_str());
+					it++;
+					headPosZ = atof((*it).c_str());			
 				}
-				
 			}
 		}
 

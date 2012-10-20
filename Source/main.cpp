@@ -4,8 +4,14 @@
 #include <string>
 #include "NIEngine.h"
 #include "SocketServer.h"
+#include "FUBI/Fubi.h"
+#include "FUBI/FubiUtils.h"
+#include "TinyThread/tinythread.h"
 
 using namespace std;
+using namespace tthread;
+
+#define FUBI_CONFIG_PATH "./Data/SamplesConfig.xml"  // cp-concern
 
 bool CheckLicense()
 {
@@ -29,13 +35,29 @@ bool CheckLicense()
 	return true;
 }
 
+bool shouldStop = FALSE;
+
+void NIWorkerProc(void*)
+{
+	Fubi::init(FUBI_CONFIG_PATH);
+
+	while (shouldStop == FALSE)
+	{
+		Fubi::update();
+	}
+
+	Fubi::release();
+}
+
 int main(int argc, char** argv)
 {
 	printf("NIServer Running...\n");
 	//CheckLicense();
-	
-	NIEngine::GetInstance()->Start();
-	
+
+	thread niThread(NIWorkerProc,NULL);
+	//niThread.join();
+	niThread.detach();
+
 	SocketServer server;
 	server.Launch();
 
@@ -48,7 +70,7 @@ int main(int argc, char** argv)
 		{
 		case 'x':
 			server.Terminate();
-			NIEngine::GetInstance()->Stop();
+			shouldStop = TRUE;
 			shouldExit = TRUE;
 			break;
 		case 't':
