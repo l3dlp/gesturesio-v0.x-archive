@@ -39,7 +39,7 @@ bool shouldStop = FALSE;
 
 void NIWorkerProc(void*)
 {
-	Fubi::init(FUBI_CONFIG_PATH);
+	Fubi::init(FUBI_CONFIG_PATH,NULL,XN_SKEL_PROFILE_HEAD_HANDS);
 
 	while (shouldStop == FALSE)
 	{
