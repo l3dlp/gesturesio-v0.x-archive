@@ -222,14 +222,36 @@ void NIEngine::ProcessData()
 		{
 			if(_userGenerator.GetSkeletonCap().IsTracking(users[i]) == FALSE)
 				continue;
+			
+			XnSkeletonJointPosition tmpPos;
+			XnPoint3D tmpPosProjective;
+			XnSkeletonJointOrientation tmpOrient;
 
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_LEFT_HAND,_leftHand);
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_RIGHT_HAND,_rightHand);
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_HEAD,_headPos);
-			_userGenerator.GetSkeletonCap().GetSkeletonJointOrientation(users[i],XN_SKEL_HEAD,_headOrient);
-			_depthGenerator.ConvertRealWorldToProjective(1,&_leftHand.position,&_leftHandPosProjective);
-			_depthGenerator.ConvertRealWorldToProjective(1,&_rightHand.position,&_rightHandPosProjective);
-			_depthGenerator.ConvertRealWorldToProjective(1,&_headPos.position,&_headPosProjective);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_LEFT_HAND,tmpPos);
+			_depthGenerator.ConvertRealWorldToProjective(1,&_leftHand.position,&tmpPosProjective);
+			if (tmpPos.fConfidence > 0.5)
+			{
+				_leftHand = tmpPos;
+				_leftHandPosProjective = tmpPosProjective;
+			}
+
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_RIGHT_HAND,tmpPos);
+			_depthGenerator.ConvertRealWorldToProjective(1,&_rightHand.position,&tmpPosProjective);
+			if (tmpPos.fConfidence > 0.5)
+			{
+				_rightHand = tmpPos;
+				_rightHandPosProjective = tmpPosProjective;
+			}
+
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_HEAD,tmpPos);
+			_depthGenerator.ConvertRealWorldToProjective(1,&_headPos.position,&tmpPosProjective);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointOrientation(users[i],XN_SKEL_HEAD,tmpOrient);
+			if (tmpPos.fConfidence > 0.5)
+			{
+				_headPos = tmpPos;
+				_headPosProjective = tmpPosProjective;
+				_headOrient = tmpOrient;
+			}
 
 			//printf("user %d: left hand at (%6.2f,%6.2f,%6.2f); rigt hand at (%6.2f,%6.2f,%6.2f)\n",users[i],
 			//	_leftHand.position.X,
