@@ -38,5 +38,8 @@
     <ClInclude Include="..\..\..\Include\TinyThread\tinythread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\Include\OneEuroFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

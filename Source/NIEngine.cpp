@@ -1,6 +1,7 @@
 #include "NIEngine.h"
 #include <math.h>
 #include "TinyThread/tinythread.h"
+#include "OneEuroFilter.h"
 
 using namespace tthread;
 
@@ -124,6 +125,7 @@ XnBool NIEngine::Start()
 	CHECK_RC(retVal, "Register to calibration complete");
 
 	_userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_UPPER);
+	_userGenerator.GetSkeletonCap().SetSmoothing(0.5); // Set global smoothing factor. This will affect all joints. 0.5 is the default value.
 	retVal = _niContext.StartGeneratingAll();
 	CHECK_RC(retVal,"StartGenerating");
 
@@ -209,6 +211,14 @@ void NIEngine::ProcessData()
 	XnUInt16 numOfUsers;
 	XnUserID users[MAX_NUM_USERS];
 	
+	static const double frequency = 30; // 30FPS by default
+	static const double mincutoff = 1; // min cutoff frequency
+	static const double beta = 1;    // cutoff slope
+	static const double dcutoff = 1; // cutoff frequency for derivate
+
+	one_euro_filter<> filter(frequency, mincutoff, beta, dcutoff);
+	double lastTs = 0;
+
 	while (_shouldStop == FALSE)
 	{
 		_niContext.WaitOneUpdateAll(_userGenerator);
@@ -227,11 +237,21 @@ void NIEngine::ProcessData()
 			XnPoint3D tmpPosProjective;
 			XnSkeletonJointOrientation tmpOrient;
 
+			XnSkeletonJointPosition filteredTmpPos;
+
+			double currentTs = (double)_userGenerator.GetTimestamp() / 1000000;
+
 			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_LEFT_HAND,tmpPos);
-			_depthGenerator.ConvertRealWorldToProjective(1,&_leftHand.position,&tmpPosProjective);
+			filteredTmpPos.position.X = filter(tmpPos.position.X, currentTs);
+			filteredTmpPos.position.Y = filter(tmpPos.position.Y, currentTs);
+			filteredTmpPos.position.Z = filter(tmpPos.position.Z, currentTs);
+			printf("time-diff %f pos-diff %f \n",currentTs - lastTs, PointDist(&tmpPos.position,&filteredTmpPos.position));
+			lastTs = currentTs;
+
+			_depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos.position,&tmpPosProjective);
 			if (tmpPos.fConfidence > 0.5)
 			{
-				_leftHand = tmpPos;
+				_leftHand = filteredTmpPos;
 				_leftHandPosProjective = tmpPosProjective;
 			}
 
