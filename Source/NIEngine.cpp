@@ -131,7 +131,7 @@ XnBool NIEngine::Start()
 	CHECK_RC(retVal,"StartGenerating");
 
 	_gestureGenerator.AddGesture("Click",NULL);
-	_gestureGenerator.AddGesture("Wave",NULL);
+	//_gestureGenerator.AddGesture("Wave",NULL);
 
 	THREADSTRUCT* param = new THREADSTRUCT;
 	param->_this = this;
@@ -157,7 +157,6 @@ void NIEngine::GestureRecognized(xn::GestureGenerator& generator,const XnChar* s
 
 	GESTURERECORD gestureRec;
 	gestureRec.name = strGesture;
-
 	gestureRec.timeStamp = 0; //TODO: add current timestamp
 
 	if (rightDist < GESTURE_DIST_THRSH)
@@ -172,9 +171,11 @@ void NIEngine::GestureRecognized(xn::GestureGenerator& generator,const XnChar* s
 	{
 		gestureRec.timeStamp = -1.0f; //invalid
 	}
-	printf("%d hand detected.%f %f \n",gestureRec.isRightHand,leftDist,rightDist);
-
-	_gestures.push_back(gestureRec);
+	if (gestureRec.timeStamp >= 0)
+	{
+		printf("%s hand gesture detected.%f %f \n",gestureRec.isRightHand ? "right":"left",leftDist,rightDist);
+		_gestures.push_back(gestureRec);
+	}
 
 	//printf("idp %f %f %f\n",pIDPosition->X,pIDPosition->Y,pIDPosition->Z);
 	//printf("enp %f %f %f\n",pEndPosition->X,pEndPosition->Y,pEndPosition->Z);

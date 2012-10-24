@@ -287,16 +287,6 @@ void glutDisplay (void)
 
 	int leftHandColor = 8; // blue
 	int rightHandColor = 7; // red
-
-	// enlarge the mark as indication of gesture event
-	if (leftGesture.compare("NONE") != 0)
-	{
-		lz *= 4;
-	}
-	if (rightGesture.compare("NONE") != 0)
-	{
-		rz *= 4;
-	}
 	
 	// Draw a white square as the background for jitter tracking
 	DrawPoint(200, 150, 100, 6);
@@ -311,6 +301,16 @@ void glutDisplay (void)
 	// Draw hand points
 	DrawPoint(lx,ly,5,leftHandColor);
 	DrawPoint(rx,ry,5,rightHandColor);
+
+	// Draw indication of gesture event
+	if (leftGesture.compare("NONE") != 0)
+	{
+		DrawPoint(lx,ly,50,3);
+	}
+	if (rightGesture.compare("NONE") != 0)
+	{
+		DrawPoint(rx,ry,50,3);
+	}
 
 #endif
 
