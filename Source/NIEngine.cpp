@@ -232,15 +232,33 @@ void NIEngine::ProcessData()
 		int numTracked=0;
 		int userToPrint=-1;
 
+		// simple user selection - choose the closest one
+		XnUserID closestUserID = 0;  
+		float smallestDist = 99999; // Math::Maxfloat?
 		for(XnUInt16 i = 0; i < numOfUsers; i++)
 		{
 			if(_userGenerator.GetSkeletonCap().IsTracking(users[i]) == FALSE)
 				continue;
-			
+
+			XnPoint3D com;
+			_userGenerator.GetCoM(users[i],com);
+			float dist = sqrtf(com.Z * com.Z + com.X * com.X); // calc distance in x-z plane
+			if (dist < smallestDist)
+			{
+				smallestDist = dist;
+				closestUserID = users[i];
+			}
+		}
+
+		// Valid user ID starts from 1
+		if(closestUserID > 0)
+		{
 			XnSkeletonJointPosition tmpPos;
 			XnPoint3D filteredTmpPos;
 			XnPoint3D tmpPosProjective;
 			XnSkeletonJointOrientation tmpOrient;
+
+			XnUserID curUserID = closestUserID;
 
 			double currentTs = (double)_userGenerator.GetTimestamp() / 1000000;
 
@@ -251,7 +269,7 @@ void NIEngine::ProcessData()
 			}
 
 			// Filter left hand
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_LEFT_HAND,tmpPos);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(curUserID,XN_SKEL_LEFT_HAND,tmpPos);
 			if (tmpPos.fConfidence > 0.5)
 			{
 				filteredTmpPos = leftHandFilter.filter(tmpPos.position,currentTs);
@@ -263,7 +281,7 @@ void NIEngine::ProcessData()
 			}
 							
 			// Filter right hand
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_RIGHT_HAND,tmpPos);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(curUserID,XN_SKEL_RIGHT_HAND,tmpPos);
 			if (tmpPos.fConfidence > 0.5)
 			{
 				filteredTmpPos = rightHandFilter.filter(tmpPos.position,currentTs);
@@ -275,8 +293,8 @@ void NIEngine::ProcessData()
 			}
 
 			// Filter head
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_HEAD,tmpPos);
-			_userGenerator.GetSkeletonCap().GetSkeletonJointOrientation(users[i],XN_SKEL_HEAD,tmpOrient);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(curUserID,XN_SKEL_HEAD,tmpPos);
+			_userGenerator.GetSkeletonCap().GetSkeletonJointOrientation(curUserID,XN_SKEL_HEAD,tmpOrient);
 			if (tmpPos.fConfidence > 0.5)
 			{
 				filteredTmpPos = headFilter.filter(tmpPos.position,currentTs);
