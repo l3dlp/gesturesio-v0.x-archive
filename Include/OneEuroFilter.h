@@ -30,7 +30,14 @@ struct low_pass_filter {
 
 template <typename T = double, typename timestamp_t = double>
 struct one_euro_filter {
+	one_euro_filter(){}
 	one_euro_filter(double _freq, T _mincutoff, T _beta, T _dcutoff) : first_time_(true), last_time_(-1), freq(_freq), mincutoff(_mincutoff), beta(_beta), dcutoff(_dcutoff) {}
+	
+	void setFreq(double _freq){freq = _freq;}
+	void setMincutoff(T _mincutoff){ mincutoff = _mincutoff;}
+	void setBeta(T _beta){beta = _beta;}
+	void setDcutoff(T _dcutoff){dcutoff = _dcutoff;}
+
 	T operator()(T x, timestamp_t t = -1) {
 		T dx = 0;
 

@@ -43,7 +43,9 @@ float Colors[][3] =
 	{1,1,0},		// Yellow
 	{1,0.5,0},		// Orange
 	{1,0,1},		// Purple
-	{1,1,1}			// White.
+	{1,1,1},		// White
+	{1,0,0},        // Red
+	{0,0,1}         // Blue
 };
 
 CActiveSocket niSocket; // Instantiate active socket object (defaults to TCP).
@@ -62,8 +64,8 @@ std::vector<std::string> parse(std::string l)
 	return tokens;
 }
 
-const int CROPBOX_WIDTH = 600; // mm
-const int CROPBOX_HEIGHT = 500; // mm
+const int CROPBOX_WIDTH = 400; // mm
+const int CROPBOX_HEIGHT = 300; // mm
 const int CROPBOX_DEPTH = 3500; // mm
 
 int g_dataFormat = 0;
@@ -265,14 +267,16 @@ void glutDisplay (void)
 	glLoadIdentity();
 
 #ifdef USE_GLUT
-	glOrtho(0, 640, 480, 0, -1.0, 1.0);
+	glOrtho(0, 800, 600, 0, -1.0, 1.0);
 #elif defined(USE_GLES)
-	glOrthof(0, 640, 480, 0, -1.0, 1.0);
+	glOrthof(0, 800, 600, 0, -1.0, 1.0);
 #endif
 
 	glDisable(GL_TEXTURE_2D);
 
 #ifdef USE_GLUT
+	//printf("hpx %f hpy %f \n",leftHandPosX,leftHandPosY);
+
 	// Map points
 	float lx = leftHandPosX / CROPBOX_WIDTH * GL_WIN_SIZE_X;
 	float ly = leftHandPosY / CROPBOX_HEIGHT * GL_WIN_SIZE_Y;
@@ -281,8 +285,8 @@ void glutDisplay (void)
 	float ry = rightHandPosY / CROPBOX_HEIGHT * GL_WIN_SIZE_Y;
 	float rz = (1 - rightHandPosZ / CROPBOX_DEPTH) * 100;
 
-	int leftHandColor = 1;
-	int rightHandColor = 4;
+	int leftHandColor = 8; // blue
+	int rightHandColor = 7; // red
 
 	// enlarge the mark as indication of gesture event
 	if (leftGesture.compare("NONE") != 0)
@@ -293,16 +297,20 @@ void glutDisplay (void)
 	{
 		rz *= 4;
 	}
-
-	// Draw hand points
-	DrawPoint(lx,ly,lz,leftHandColor);
-	DrawPoint(rx,ry,rz,rightHandColor);
+	
+	// Draw a white square as the background for jitter tracking
+	DrawPoint(200, 150, 100, 6);
+	DrawPoint(500, 150, 100, 6);
 
 	// Draw head point
 	float hx = headPosX / CROPBOX_WIDTH * GL_WIN_SIZE_X;
 	float hy = headPosY / CROPBOX_HEIGHT * GL_WIN_SIZE_Y;
 	float hz = (1 - headPosZ / CROPBOX_DEPTH) * 100; 
-	DrawPoint(hx,hy,hz,6);
+	DrawPoint(hx,hy,20,1);  //Green
+
+	// Draw hand points
+	DrawPoint(lx,ly,5,leftHandColor);
+	DrawPoint(rx,ry,5,rightHandColor);
 
 #endif
 
@@ -333,6 +341,8 @@ void glutKeyboard (unsigned char key, int x, int y)
 {
 	switch (key)
 	{
+	case 27:
+		// Exit
 	case 'x':
 		niSocket.Close();
 		printf("Socket closed.\n");

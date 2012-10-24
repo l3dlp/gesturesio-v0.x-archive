@@ -1,6 +1,6 @@
 #include <XnCppWrapper.h>
 #include <list>
-
+#include "OneEuroFilter.h"
 
 typedef struct 
 {
@@ -8,6 +8,58 @@ typedef struct
 	std::string name;
 	float timeStamp;
 }GESTURERECORD;
+
+struct Point3DFilter
+{
+	Point3DFilter(double _freq, double _mincutoff, double _beta, double _dcutoff): isEnabled(true)
+	{
+		filterX.setFreq(_freq);
+		filterX.setMincutoff(_mincutoff);
+		filterX.setBeta(_beta);
+		filterX.setDcutoff(_dcutoff);
+
+		filterY.setFreq(_freq);
+		filterY.setMincutoff(_mincutoff);
+		filterY.setBeta(_beta);
+		filterY.setDcutoff(_dcutoff);
+
+		filterZ.setFreq(_freq);
+		filterZ.setMincutoff(_mincutoff);
+		filterZ.setBeta(_beta);
+		filterZ.setDcutoff(_dcutoff);
+	}
+
+private:
+	one_euro_filter<> filterX;
+	one_euro_filter<> filterY;
+	one_euro_filter<> filterZ;
+	bool isEnabled;
+
+public:
+	XnPoint3D filter(XnPoint3D point, double timeStamp)
+	{
+		XnPoint3D filteredPoint;
+		
+		if (isEnabled == true)
+		{
+			filteredPoint.X = filterX(point.X,timeStamp);
+			filteredPoint.Y = filterY(point.Y,timeStamp);
+			filteredPoint.Z = filterZ(point.Z,timeStamp);
+		}
+		else
+		{
+			filteredPoint = point;
+			printf("filter disabled! \n");
+		}
+
+		return filteredPoint;
+	}
+
+	void enable(bool enabled)
+	{
+		isEnabled = enabled;
+	}
+};
 
 class NIEngine
 {

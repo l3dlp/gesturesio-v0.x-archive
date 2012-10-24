@@ -1,7 +1,7 @@
 #include "NIEngine.h"
 #include <math.h>
 #include "TinyThread/tinythread.h"
-#include "OneEuroFilter.h"
+
 
 using namespace tthread;
 
@@ -49,6 +49,7 @@ void XN_CALLBACK_TYPE UserCalibration_CalibrationComplete(xn::SkeletonCapability
 NIEngine::NIEngine()
 {
 	_running = FALSE;
+
 	memset(&_leftHand,0,sizeof(_leftHand));
 	memset(&_rightHand,0,sizeof(_rightHand));
 	memset(&_leftHandPosProjective,0,sizeof(_leftHandPosProjective));
@@ -211,13 +212,16 @@ void NIEngine::ProcessData()
 	XnUInt16 numOfUsers;
 	XnUserID users[MAX_NUM_USERS];
 	
-	static const double frequency = 30; // 30FPS by default
-	static const double mincutoff = 1; // min cutoff frequency
-	static const double beta = 1;    // cutoff slope
-	static const double dcutoff = 1; // cutoff frequency for derivate
+	double frequency = 30; // 30FPS by default
+	double mincutoff = 1;  // min cutoff frequency
+	double beta = 0.05;     // cutoff slope
+	double dcutoff = 1;    // cutoff frequency for derivate
 
-	one_euro_filter<> filter(frequency, mincutoff, beta, dcutoff);
-	double lastTs = 0;
+	Point3DFilter headFilter(frequency,mincutoff,beta,dcutoff);
+	Point3DFilter leftHandFilter(frequency,mincutoff,beta,dcutoff);
+	Point3DFilter rightHandFilter(frequency,mincutoff,beta,dcutoff);
+
+	double lastTs = 0;  // last time stamp
 
 	while (_shouldStop == FALSE)
 	{
@@ -234,45 +238,58 @@ void NIEngine::ProcessData()
 				continue;
 			
 			XnSkeletonJointPosition tmpPos;
+			XnPoint3D filteredTmpPos;
 			XnPoint3D tmpPosProjective;
 			XnSkeletonJointOrientation tmpOrient;
 
-			XnSkeletonJointPosition filteredTmpPos;
-
 			double currentTs = (double)_userGenerator.GetTimestamp() / 1000000;
 
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_LEFT_HAND,tmpPos);
-			filteredTmpPos.position.X = filter(tmpPos.position.X, currentTs);
-			filteredTmpPos.position.Y = filter(tmpPos.position.Y, currentTs);
-			filteredTmpPos.position.Z = filter(tmpPos.position.Z, currentTs);
-			printf("time-diff %f pos-diff %f \n",currentTs - lastTs, PointDist(&tmpPos.position,&filteredTmpPos.position));
-			lastTs = currentTs;
-
-			_depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos.position,&tmpPosProjective);
-			if (tmpPos.fConfidence > 0.5)
+			// Monitor frame dropping
+			if (currentTs - lastTs > 0.034)
 			{
-				_leftHand = filteredTmpPos;
-				_leftHandPosProjective = tmpPosProjective;
+				printf("%d frames dropped!\n",(int)abs(currentTs-lastTs / 0.033));
 			}
 
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_RIGHT_HAND,tmpPos);
-			_depthGenerator.ConvertRealWorldToProjective(1,&_rightHand.position,&tmpPosProjective);
+			// Filter left hand
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_LEFT_HAND,tmpPos);
 			if (tmpPos.fConfidence > 0.5)
 			{
+				filteredTmpPos = leftHandFilter.filter(tmpPos.position,currentTs);
+				//printf("time-diff %f pos-diff %f \n",currentTs - lastTs, PointDist(&tmpPos.position,&filteredTmpPos));
+				_depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos,&tmpPosProjective);
+				_leftHand = tmpPos;
+				_leftHand.position = filteredTmpPos;
+				_leftHandPosProjective = tmpPosProjective;
+			}
+							
+			// Filter right hand
+			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_RIGHT_HAND,tmpPos);
+			if (tmpPos.fConfidence > 0.5)
+			{
+				filteredTmpPos = rightHandFilter.filter(tmpPos.position,currentTs);
+				//printf("time-diff %f pos-diff %f \n",currentTs - lastTs, PointDist(&tmpPos.position,&filteredTmpPos));
+				_depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos,&tmpPosProjective);
 				_rightHand = tmpPos;
+				_rightHand.position = filteredTmpPos;
 				_rightHandPosProjective = tmpPosProjective;
 			}
 
+			// Filter head
 			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(users[i],XN_SKEL_HEAD,tmpPos);
-			_depthGenerator.ConvertRealWorldToProjective(1,&_headPos.position,&tmpPosProjective);
 			_userGenerator.GetSkeletonCap().GetSkeletonJointOrientation(users[i],XN_SKEL_HEAD,tmpOrient);
 			if (tmpPos.fConfidence > 0.5)
 			{
+				filteredTmpPos = headFilter.filter(tmpPos.position,currentTs);
+				_depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos,&tmpPosProjective);
 				_headPos = tmpPos;
+				_headPos.position = filteredTmpPos;
 				_headPosProjective = tmpPosProjective;
-				_headOrient = tmpOrient;
+
+				_headOrient = tmpOrient; // not filtered
 			}
 
+			lastTs = currentTs;
+			
 			//printf("user %d: left hand at (%6.2f,%6.2f,%6.2f); rigt hand at (%6.2f,%6.2f,%6.2f)\n",users[i],
 			//	_leftHand.position.X,
 			//	_leftHand.position.Y,
