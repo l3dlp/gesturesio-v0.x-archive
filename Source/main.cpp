@@ -4,6 +4,7 @@
 #include <string>
 #include "NIEngine.h"
 #include "SocketServer.h"
+#include "Utils.h"
 
 using namespace std;
 
@@ -31,13 +32,18 @@ bool CheckLicense()
 
 int main(int argc, char** argv)
 {
-	printf("NIServer Running...\n");
+	Logger logger("log.txt");
+
+	logger.Log("NIServer Running...");
+	//printf("NIServer Running...\n");
 	//CheckLicense();
 	
 	NIEngine::GetInstance()->Start();
 	
 	SocketServer server;
 	server.Launch();
+
+	logger.Log("Server launched...");
 
 	printf("Input command:\n t - terminate server\n x - exit\n");
 	bool shouldExit = FALSE;
