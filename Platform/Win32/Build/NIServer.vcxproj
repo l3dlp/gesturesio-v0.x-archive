@@ -72,12 +72,17 @@
     <ClCompile Include="..\..\..\Source\NIEngine.cpp" />
     <ClCompile Include="..\..\..\Source\SocketServer.cpp" />
     <ClCompile Include="..\..\..\Source\TinyThread\tinythread.cpp" />
+    <ClCompile Include="..\..\..\Source\Utils.cpp" />
+    <ClCompile Include="..\..\..\Source\vjson\block_allocator.cpp" />
+    <ClCompile Include="..\..\..\Source\vjson\json.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Include\NIEngine.h" />
     <ClInclude Include="..\..\..\Include\OneEuroFilter.h" />
     <ClInclude Include="..\..\..\Include\SocketServer.h" />
     <ClInclude Include="..\..\..\Include\TinyThread\tinythread.h" />
+    <ClInclude Include="..\..\..\Include\vjason\block_allocator.h" />
+    <ClInclude Include="..\..\..\Include\vjason\json.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
