@@ -29,6 +29,11 @@ JasonParsor::JasonParsor()
 
 }
 
+JasonParsor::~JasonParsor()
+{
+
+}
+
 bool JasonParsor::Parse(char* source)
 {
 	char *errorPos = 0;
