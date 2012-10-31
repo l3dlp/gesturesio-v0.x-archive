@@ -3,24 +3,42 @@
 
 using namespace std;
 
+#define  LOG_FILE_NAME "log.txt"
+
+Logger* Logger::_instance = NULL;
+
 Logger::Logger(char* fileName)
 {
-	m_stream.open(fileName,ios::app);
+	_stream.open(fileName,ios::app);
 }
 
-void Logger::Log(char* logLine)
+Logger* Logger::GetInstance()
+{
+	if (_instance == NULL)
+	{
+		_instance = new Logger(LOG_FILE_NAME);
+	}
+	return _instance;
+}
+
+void Logger::Log(string logLine, bool printConsole)
 {
 	time_t now = time(0);
 	tm* gmtm = gmtime(&now);
 	if (gmtm != NULL)
 	{
-		m_stream << asctime(gmtm) << logLine << endl;
+		_stream << asctime(gmtm) << logLine.c_str() << endl;
+	}
+	if (printConsole)
+	{
+		printf(logLine.c_str());
+		printf("\n");
 	}
 }
 
 Logger::~Logger()
 {
-	m_stream.close();
+	_stream.close();
 }
 
 JasonParsor::JasonParsor()

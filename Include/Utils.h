@@ -5,12 +5,14 @@ using namespace std;
 class Logger
 {
 public:
-		Logger(char* fileName);
 		~Logger();
-		void Log(char* logLine);
+		void Log(string logLine, bool printConsole = false);
+		static Logger* GetInstance();
 
 private:
-	ofstream m_stream;
+	Logger(char* fileName);
+	ofstream _stream;
+	static Logger* _instance;
 };
 
 

@@ -1,7 +1,7 @@
 #include "NIEngine.h"
 #include <math.h>
 #include "TinyThread/tinythread.h"
-
+#include "Utils.h"
 
 using namespace tthread;
 
@@ -83,7 +83,7 @@ XnBool NIEngine::Start()
 		return false;
 	}
 
-	printf("Starting NIEngine...\n");
+	Logger::GetInstance()->Log("Starting NIEngine...");
 
 	retVal = _niContext.InitFromXmlFile(OPENNI_CONFIG_PATH,_niScriptNode,&errors);
 	if (retVal == XN_STATUS_NO_NODE_PRESENT)
@@ -139,7 +139,7 @@ XnBool NIEngine::Start()
 	//niThread.join();
 	niThread.detach();
 
-	printf("NIEngine Started.\n");
+	Logger::GetInstance()->Log("NIEngine Started.");
 	return true;
 }
 
@@ -336,8 +336,8 @@ XnBool NIEngine::Stop()
 	}
 	
 	_shouldStop = TRUE;
-	printf("Stopping NIEngine...\n");
 
+	Logger::GetInstance()->Log("Stopping NIEngine...");
 	// TODO: find proper way to release the resource and destruct the instance.
 
 	//_niContext.StopGeneratingAll();

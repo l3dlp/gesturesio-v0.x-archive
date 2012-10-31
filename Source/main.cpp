@@ -51,7 +51,7 @@ string HttpRequest(const char* url)
 
 bool CheckLicense()
 {
-	printf("validating your license...\n");
+	Logger::GetInstance()->Log("validating your license...");
 	string keyword = "";
 	ifstream licenseFile;
 	char buffer[100];
@@ -64,7 +64,7 @@ bool CheckLicense()
 		licenseFile.close();
 	}
 
-	printf("keyword:%s\n", keyword.c_str());
+	Logger::GetInstance()->Log("keyword: " + keyword);
 
 	if (keyword.empty() == false)
 	{
@@ -85,10 +85,8 @@ bool CheckLicense()
 
 int main(int argc, char** argv)
 {
-	Logger logger("log.txt");
+	Logger::GetInstance()->Log("NIServer Running...");
 
-	logger.Log("NIServer Running...");
-	//printf("NIServer Running...\n");
 	bool valid = CheckLicense();
 	if (valid == false)
 	{
@@ -100,9 +98,9 @@ int main(int argc, char** argv)
 	SocketServer server;
 	server.Launch();
 
-	logger.Log("Server launched...");
+	Logger::GetInstance()->Log("Server launched...");
 
-	printf("Input command:\n t - terminate server\n x - exit\n");
+	Logger::GetInstance()->Log("Input command:\n t - terminate server\n x - exit\n",true);
 	bool shouldExit = FALSE;
 	while(shouldExit == FALSE)
 	{
