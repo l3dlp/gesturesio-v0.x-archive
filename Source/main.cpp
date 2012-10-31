@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 #include "NIEngine.h"
 #include "SocketServer.h"
 #include "Utils.h"
@@ -51,9 +52,10 @@ string HttpRequest(const char* url)
 bool CheckLicense()
 {
 	printf("validating your license...\n");
-	string keyword;
+	string keyword = "";
 	ifstream licenseFile;
 	char buffer[100];
+	bool isValid = false;
 
 	licenseFile.open("license.txt");
 	if (licenseFile.is_open())
@@ -61,6 +63,7 @@ bool CheckLicense()
 		getline(licenseFile,keyword);
 		licenseFile.close();
 	}
+
 	printf("keyword:%s\n", keyword.c_str());
 
 	if (keyword.empty() == false)
@@ -70,14 +73,14 @@ bool CheckLicense()
 		string response = HttpRequest(url.c_str());
 
 		// parse the jason response
-		memcpy(&buffer,response.c_str(),response.length());
+		int size = response.size();
+		std::vector<char> buffer(size + 1);
+		memcpy(&buffer[0],response.c_str(),size);
 		JasonParsor parsor;
-		parsor.Parse(buffer);
-
-		return true;
+		isValid = parsor.Parse(&buffer[0]);
 	}
 
-	return false;
+	return isValid;
 }
 
 int main(int argc, char** argv)
