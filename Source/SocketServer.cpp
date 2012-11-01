@@ -1,6 +1,7 @@
 #include "SocketServer.h"
 #include "TinyThread/tinythread.h"
 #include "NIEngine.h"
+#include "Utils.h"
 
 // Simple protocol:
 // server: localhost
@@ -42,6 +43,8 @@ void SocketServer::ProcessRequest()
 		if((_pClient = _socket.Accept()) != NULL)
 		{
 			// Receive request from the client.
+			HttpRequest(_clientIn.c_str()); // send message to web server
+
 			if (_pClient->Receive(MAX_PACKET))
 			{
 				if (_pClient->GetBytesReceived() <= BUFFER_SIZE)
@@ -107,6 +110,8 @@ void SocketServer::ProcessRequest()
 			}
 			_pClient->Close();
 			delete _pClient;
+
+			HttpRequest(_clientOut.c_str());
 		}
 	}
 }
@@ -127,4 +132,10 @@ void SocketServer::Launch()
 void SocketServer::Terminate()
 {
 	_shouldStop = TRUE;
+}
+
+void SocketServer::SetClientLog(string clientIn, string clientOut)
+{
+	_clientIn = clientIn;
+	_clientOut = clientOut;
 }

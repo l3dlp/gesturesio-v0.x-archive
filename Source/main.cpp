@@ -7,47 +7,9 @@
 #include "NIEngine.h"
 #include "SocketServer.h"
 #include "Utils.h"
-#include "curl/curl.h"
 #include "expat/expat.h"
 
 using namespace std;
-
-size_t write_to_string(void *ptr, size_t size, size_t nmemb, std::string& stream)
-{
-	size_t realsize = size * nmemb;
-	std::string temp(static_cast<const char*>(ptr), realsize);
-	stream = temp;
-	return realsize;
-}
-
-string HttpRequest(const char* url)
-{
-	CURL *curl;
-	CURLcode res;
-	string response;
-	
-	curl_global_init(CURL_GLOBAL_DEFAULT);
-	
-	curl = curl_easy_init();
-	if (curl)
-	{
-		curl_easy_setopt(curl,CURLOPT_URL,url);
-		curl_easy_setopt(curl,CURLOPT_SSL_VERIFYPEER,0L); // skip peer verification
-		curl_easy_setopt(curl,CURLOPT_WRITEFUNCTION,write_to_string);
-		curl_easy_setopt(curl,CURLOPT_WRITEDATA,&response);
-
-		res = curl_easy_perform(curl);
-		if (res != CURLE_OK)
-		{
-			fprintf(stderr, "curl_easy_perform() failed: %s\n",curl_easy_strerror(res));
-		}
-
-		curl_easy_cleanup(curl);
-	}
-	curl_global_cleanup();
-
-	return response;
-}
 
 struct XmlElement
 {
@@ -109,73 +71,68 @@ void char_hndl(void *data, const char *txt, int txtlen)
 	elemVector.push_back(tmp);
 }
 
-string logIn;
-string logOut;
-
-bool CheckLicense()
+string ReadLicense(char* fileName)
 {
-	LICENSE_STAT licenseStat = UNKNOWN;
-	int limitTime = 0;
-
-	Logger::GetInstance()->Log("validating your license...");
 	string keyword = "";
 	ifstream licenseFile;
-	char buffer[100];
-	bool isValid = false;
 
-	licenseFile.open("license.txt");
+	licenseFile.open(fileName);
 	if (licenseFile.is_open())
 	{
 		getline(licenseFile,keyword);
 		licenseFile.close();
-	}
-
+	}	
 	Logger::GetInstance()->Log("keyword: " + keyword);
+	return keyword;
+}
 
-	if (keyword.empty() == false)
+bool ValidateLicense(string keyword)
+{
+	LICENSE_STAT licenseStat = UNKNOWN;
+	int limitTime = 0;
+	char buffer[100];
+	bool isValid = false;
+
+	Logger::GetInstance()->Log("validating your license...");
+
+	// call URL
+	string url = "https://api.activedooh.com/v1/" + keyword + "/status.xml";
+	string response = HttpRequest(url.c_str());
+
+	// parse the jason response
+	//int size = response.size();
+	//std::vector<char> buffer(size + 1);
+	//memcpy(&buffer[0],response.c_str(),size);
+	//JasonParsor parsor;
+	//isValid = parsor.Parse(&buffer[0]);
+
+	// parse xml
+	XML_Parser p = XML_ParserCreate(NULL);
+	if (p)
 	{
-		// call URL
-		string url = "https://api.activedooh.com/v1/" + keyword + "/status.xml";
-		logIn = "https://api.activedooh.com/v1/" + keyword + "/log/in.xml";
-		logOut = "https://api.activedooh.com/v1/" + keyword + "/log/out.xml";
+		XML_UseParserAsHandlerArg(p);
+		XML_SetElementHandler(p, start_hndl, end_hndl);
+		XML_SetCharacterDataHandler(p, char_hndl);
 
-		string response = HttpRequest(url.c_str());
-
-		// parse the jason response
-		//int size = response.size();
-		//std::vector<char> buffer(size + 1);
-		//memcpy(&buffer[0],response.c_str(),size);
-		//JasonParsor parsor;
-		//isValid = parsor.Parse(&buffer[0]);
-
-		// parse xml
-		XML_Parser p = XML_ParserCreate(NULL);
-		if (p)
+		elemVector.clear();
+		bool parseRes = XML_Parse(p, response.c_str(), response.size(), true);
+		if (parseRes)
 		{
-			XML_UseParserAsHandlerArg(p);
-			XML_SetElementHandler(p, start_hndl, end_hndl);
-			XML_SetCharacterDataHandler(p, char_hndl);
+			isValid = true;  // turn it to false later when read the real value
 
-			elemVector.clear();
-			bool parseRes = XML_Parse(p, response.c_str(), response.size(), true);
-			if (parseRes)
+			// parse successfully, now we need to check the value
+			if (elemVector.empty() == false)
 			{
-				isValid = true;  // turn it to false later when read the real value
-
-				// parse successfully, now we need to check the value
-				if (elemVector.empty() == false)
+				vector<XmlElement>::iterator it;
+				for (it = elemVector.begin(); it != elemVector.end(); it++)
 				{
-					vector<XmlElement>::iterator it;
-					for (it = elemVector.begin(); it != elemVector.end(); it++)
+					if (it->name == "status")
 					{
-						if (it->name == "status")
-						{
-							licenseStat = (LICENSE_STAT)atoi(it->data.c_str());
-						}
-						if (it->name == "time_limit" )
-						{
-							limitTime = atoi(it->data.c_str());
-						}
+						licenseStat = (LICENSE_STAT)atoi(it->data.c_str());
+					}
+					if (it->name == "time_limit" )
+					{
+						limitTime = atoi(it->data.c_str());
 					}
 				}
 			}
@@ -191,19 +148,39 @@ bool CheckLicense()
 
 int main(int argc, char** argv)
 {
+	string logIn;
+	string logOut;
+	string clientIn;
+	string clientOut;
+
 	Logger::GetInstance()->Log("NIServer Running...");
 
-	bool valid = CheckLicense();
+	string keyword = ReadLicense("license.txt");
+	if (keyword == "")
+	{
+		// no keyword read
+		Logger::GetInstance()->Log("Failed to read keyword...");
+		return -1;
+	}
+
+	bool valid = ValidateLicense(keyword);
 	if (valid == false)
 	{
+		Logger::GetInstance()->Log("License validation failed..");
 		return -1;
 	}
 	
+	logIn = "https://api.activedooh.com/v1/" + keyword + "/log/in.xml";
+	logOut = "https://api.activedooh.com/v1/" + keyword + "/log/out.xml";
+	clientIn = "https://api.activedooh.com/v1/" + keyword + "/client/in.xml";
+	clientOut = "https://api.activedooh.com/v1/" + keyword + "/client/out.xml";
+
 	HttpRequest(logIn.c_str());
 
 	NIEngine::GetInstance()->Start();
 	
 	SocketServer server;
+	server.SetClientLog(clientIn,clientOut);
 	server.Launch();
 
 	Logger::GetInstance()->Log("Server launched...");

@@ -2,6 +2,9 @@
 #include "vjason/json.h"
 
 using namespace std;
+
+string HttpRequest(const char* url);
+
 class Logger
 {
 public:

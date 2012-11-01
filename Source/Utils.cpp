@@ -1,9 +1,49 @@
 #include "Utils.h"
 #include <ctime>
+#include "curl/curl.h"
 
 using namespace std;
 
 #define  LOG_FILE_NAME "log.txt"
+
+
+size_t write_to_string(void *ptr, size_t size, size_t nmemb, std::string& stream)
+{
+	size_t realsize = size * nmemb;
+	std::string temp(static_cast<const char*>(ptr), realsize);
+	stream = temp;
+	return realsize;
+}
+
+string HttpRequest(const char* url)
+{
+	CURL *curl;
+	CURLcode res;
+	string response;
+
+	curl_global_init(CURL_GLOBAL_DEFAULT);
+
+	curl = curl_easy_init();
+	if (curl)
+	{
+		curl_easy_setopt(curl,CURLOPT_URL,url);
+		curl_easy_setopt(curl,CURLOPT_SSL_VERIFYPEER,0L); // skip peer verification
+		curl_easy_setopt(curl,CURLOPT_WRITEFUNCTION,write_to_string);
+		curl_easy_setopt(curl,CURLOPT_WRITEDATA,&response);
+
+		res = curl_easy_perform(curl);
+		if (res != CURLE_OK)
+		{
+			fprintf(stderr, "curl_easy_perform() failed: %s\n",curl_easy_strerror(res));
+		}
+
+		curl_easy_cleanup(curl);
+	}
+	curl_global_cleanup();
+
+	return response;
+}
+
 
 Logger* Logger::_instance = NULL;
 
