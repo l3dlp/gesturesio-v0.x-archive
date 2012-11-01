@@ -109,6 +109,9 @@ void char_hndl(void *data, const char *txt, int txtlen)
 	elemVector.push_back(tmp);
 }
 
+string logIn;
+string logOut;
+
 bool CheckLicense()
 {
 	LICENSE_STAT licenseStat = UNKNOWN;
@@ -133,6 +136,9 @@ bool CheckLicense()
 	{
 		// call URL
 		string url = "https://api.activedooh.com/v1/" + keyword + "/status.xml";
+		logIn = "https://api.activedooh.com/v1/" + keyword + "/log/in.xml";
+		logOut = "https://api.activedooh.com/v1/" + keyword + "/log/out.xml";
+
 		string response = HttpRequest(url.c_str());
 
 		// parse the jason response
@@ -192,6 +198,8 @@ int main(int argc, char** argv)
 	{
 		return -1;
 	}
+	
+	HttpRequest(logIn.c_str());
 
 	NIEngine::GetInstance()->Start();
 	
@@ -220,5 +228,6 @@ int main(int argc, char** argv)
 		}
 	}
 
+	HttpRequest(logOut.c_str());
 	return 1;
 }
