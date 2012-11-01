@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <stack>
 #include "NIEngine.h"
 #include "SocketServer.h"
 #include "Utils.h"
@@ -10,7 +11,6 @@
 #include "expat/expat.h"
 
 using namespace std;
-
 
 size_t write_to_string(void *ptr, size_t size, size_t nmemb, std::string& stream)
 {
@@ -49,7 +49,24 @@ string HttpRequest(const char* url)
 	return response;
 }
 
+struct XmlElement
+{
+	string name;
+	string data;
+};
+
+enum LICENSE_STAT
+{
+	INVALID = 0,
+	VALID,
+	TIMELIMITED,
+	UNKNOWN
+};
+
 int Eventcnt = 0;
+
+stack<XmlElement> elemStack;
+vector<XmlElement> elemVector;
 
 void default_hndl(void *data, const char *s, int len) 
 {
@@ -67,27 +84,36 @@ void start_hndl(void *data, const char *el, const char **attr)
 {
 	printf("\n%4d: Start tag %s - ", Eventcnt++, el);
 	printcurrent((XML_Parser) data);
+
+	// push current element
+	XmlElement tmp;
+	tmp.name = string(el);
+	elemStack.push(tmp);
 }
 
 void end_hndl(void *data, const char *el) 
 {
 	printf("\n%4d: End tag %s -\n", Eventcnt++, el);
+	 
+	elemStack.pop();
 }
 
 void char_hndl(void *data, const char *txt, int txtlen) 
 {
 	printf("\n%4d: Text - ", Eventcnt++);
 	fwrite(txt, txtlen, sizeof(char), stdout);
-}
-
-void proc_hndl(void *data, const char *target, const char *pidata) 
-{
-	printf("\n%4d: Processing Instruction - ", Eventcnt++);
-	printcurrent((XML_Parser) data);
+	
+	// save current element
+	XmlElement tmp = elemStack.top();
+	tmp.data = string(txt,txtlen);
+	elemVector.push_back(tmp);
 }
 
 bool CheckLicense()
 {
+	LICENSE_STAT licenseStat = UNKNOWN;
+	int limitTime = 0;
+
 	Logger::GetInstance()->Log("validating your license...");
 	string keyword = "";
 	ifstream licenseFile;
@@ -123,14 +149,36 @@ bool CheckLicense()
 			XML_UseParserAsHandlerArg(p);
 			XML_SetElementHandler(p, start_hndl, end_hndl);
 			XML_SetCharacterDataHandler(p, char_hndl);
-			XML_SetProcessingInstructionHandler(p, proc_hndl);
+
+			elemVector.clear();
 			bool parseRes = XML_Parse(p, response.c_str(), response.size(), true);
-			if (!parseRes)
+			if (parseRes)
 			{
-				printf("xml parsing error\n");
+				isValid = true;  // turn it to false later when read the real value
+
+				// parse successfully, now we need to check the value
+				if (elemVector.empty() == false)
+				{
+					vector<XmlElement>::iterator it;
+					for (it = elemVector.begin(); it != elemVector.end(); it++)
+					{
+						if (it->name == "status")
+						{
+							licenseStat = (LICENSE_STAT)atoi(it->data.c_str());
+						}
+						if (it->name == "time_limit" )
+						{
+							limitTime = atoi(it->data.c_str());
+						}
+					}
+				}
 			}
 		}
 	}
+
+	// now we read the value and take some actions
+	// licenseState
+	// limiTime
 
 	return isValid;
 }
