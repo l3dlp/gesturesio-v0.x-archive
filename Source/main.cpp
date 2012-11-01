@@ -7,6 +7,7 @@
 #include "SocketServer.h"
 #include "Utils.h"
 #include "curl/curl.h"
+#include "expat/expat.h"
 
 using namespace std;
 
@@ -48,6 +49,42 @@ string HttpRequest(const char* url)
 	return response;
 }
 
+int Eventcnt = 0;
+
+void default_hndl(void *data, const char *s, int len) 
+{
+	fwrite(s, len, sizeof(char), stdout);
+}
+
+void printcurrent(XML_Parser p)
+{
+	XML_SetDefaultHandler(p, default_hndl);
+	XML_DefaultCurrent(p);
+	XML_SetDefaultHandler(p, (XML_DefaultHandler) 0);
+}
+
+void start_hndl(void *data, const char *el, const char **attr)
+{
+	printf("\n%4d: Start tag %s - ", Eventcnt++, el);
+	printcurrent((XML_Parser) data);
+}
+
+void end_hndl(void *data, const char *el) 
+{
+	printf("\n%4d: End tag %s -\n", Eventcnt++, el);
+}
+
+void char_hndl(void *data, const char *txt, int txtlen) 
+{
+	printf("\n%4d: Text - ", Eventcnt++);
+	fwrite(txt, txtlen, sizeof(char), stdout);
+}
+
+void proc_hndl(void *data, const char *target, const char *pidata) 
+{
+	printf("\n%4d: Processing Instruction - ", Eventcnt++);
+	printcurrent((XML_Parser) data);
+}
 
 bool CheckLicense()
 {
@@ -69,15 +106,30 @@ bool CheckLicense()
 	if (keyword.empty() == false)
 	{
 		// call URL
-		string url = "https://api.activedooh.com/v1/" + keyword + "/status.json";
+		string url = "https://api.activedooh.com/v1/" + keyword + "/status.xml";
 		string response = HttpRequest(url.c_str());
 
 		// parse the jason response
-		int size = response.size();
-		std::vector<char> buffer(size + 1);
-		memcpy(&buffer[0],response.c_str(),size);
-		JasonParsor parsor;
-		isValid = parsor.Parse(&buffer[0]);
+		//int size = response.size();
+		//std::vector<char> buffer(size + 1);
+		//memcpy(&buffer[0],response.c_str(),size);
+		//JasonParsor parsor;
+		//isValid = parsor.Parse(&buffer[0]);
+
+		// parse xml
+		XML_Parser p = XML_ParserCreate(NULL);
+		if (p)
+		{
+			XML_UseParserAsHandlerArg(p);
+			XML_SetElementHandler(p, start_hndl, end_hndl);
+			XML_SetCharacterDataHandler(p, char_hndl);
+			XML_SetProcessingInstructionHandler(p, proc_hndl);
+			bool parseRes = XML_Parse(p, response.c_str(), response.size(), true);
+			if (!parseRes)
+			{
+				printf("xml parsing error\n");
+			}
+		}
 	}
 
 	return isValid;
