@@ -146,7 +146,7 @@ bool ValidateLicense(string keyword)
 	return isValid;
 }
 
-int main(int argc, char** argv)
+int NIServerMain()
 {
 	string logIn;
 	string logOut;
