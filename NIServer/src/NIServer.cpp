@@ -5,9 +5,9 @@
 #include <vector>
 #include <stack>
 #include "NIEngine.h"
-#include "SocketServer.h"
 #include "Utils.h"
 #include "expat/expat.h"
+#include "NIServer.h"
 
 using namespace std;
 
@@ -17,13 +17,11 @@ struct XmlElement
 	string data;
 };
 
-enum LICENSE_STAT
-{
-	INVALID = 0,
-	VALID,
-	TIMELIMITED,
-	UNKNOWN
-};
+string g_keyword;
+string g_logIn;
+string g_logOut;
+int g_limitedTime = 0;
+bool g_isRunning = false;
 
 int Eventcnt = 0;
 
@@ -86,25 +84,15 @@ string ReadLicense(char* fileName)
 	return keyword;
 }
 
-bool ValidateLicense(string keyword)
+license_State ValidateLicense(string keyword)
 {
-	LICENSE_STAT licenseStat = UNKNOWN;
-	int limitTime = 0;
-	char buffer[100];
-	bool isValid = false;
+    license_State licenseStat = LICENSE_UNKNOWN;
 
 	Logger::GetInstance()->Log("validating your license...");
 
 	// call URL
 	string url = "https://api.activedooh.com/v1/" + keyword + "/status.xml";
 	string response = HttpRequest(url.c_str());
-
-	// parse the jason response
-	//int size = response.size();
-	//std::vector<char> buffer(size + 1);
-	//memcpy(&buffer[0],response.c_str(),size);
-	//JasonParsor parsor;
-	//isValid = parsor.Parse(&buffer[0]);
 
 	// parse xml
 	XML_Parser p = XML_ParserCreate(NULL);
@@ -118,8 +106,6 @@ bool ValidateLicense(string keyword)
 		bool parseRes = XML_Parse(p, response.c_str(), response.size(), true);
 		if (parseRes)
 		{
-			isValid = true;  // turn it to false later when read the real value
-
 			// parse successfully, now we need to check the value
 			if (elemVector.empty() == false)
 			{
@@ -128,83 +114,73 @@ bool ValidateLicense(string keyword)
 				{
 					if (it->name == "status")
 					{
-						licenseStat = (LICENSE_STAT)atoi(it->data.c_str());
+                        licenseStat = (license_State)atoi(it->data.c_str());
 					}
 					if (it->name == "time_limit" )
 					{
-						limitTime = atoi(it->data.c_str());
+                        g_limitedTime = atoi(it->data.c_str());
 					}
 				}
 			}
 		}
 	}
 
-	// now we read the value and take some actions
-	// licenseState
-	// limiTime
-
-	return isValid;
+    return licenseStat;
 }
 
-int NIServerMain()
+license_State CheckLicense()
 {
-	string logIn;
-	string logOut;
-	string clientIn;
-	string clientOut;
+    Logger::GetInstance()->Log("NIServer Running...");
 
-	Logger::GetInstance()->Log("NIServer Running...");
+    license_State liceneStat = LICENSE_UNKNOWN;
 
-	string keyword = ReadLicense("license.txt");
-	if (keyword == "")
-	{
-		// no keyword read
-		Logger::GetInstance()->Log("Failed to read keyword...");
-		return -1;
-	}
+    string keyword = ReadLicense("license.txt");
 
-	bool valid = ValidateLicense(keyword);
-	if (valid == false)
-	{
-		Logger::GetInstance()->Log("License validation failed..");
-		return -1;
-	}
-	
-	logIn = "https://api.activedooh.com/v1/" + keyword + "/log/in.xml";
-	logOut = "https://api.activedooh.com/v1/" + keyword + "/log/out.xml";
-	clientIn = "https://api.activedooh.com/v1/" + keyword + "/client/in.xml";
-	clientOut = "https://api.activedooh.com/v1/" + keyword + "/client/out.xml";
+    g_logIn = "https://api.activedooh.com/v1/" + keyword + "/log/in.xml";
+    g_logOut = "https://api.activedooh.com/v1/" + keyword + "/log/out.xml";
 
-	HttpRequest(logIn.c_str());
+    if (keyword.empty())
+    {
+        Logger::GetInstance()->Log("Failed to read keyword...");
+    }
+    else
+    {
+        liceneStat = ValidateLicense(keyword);
+        if (liceneStat == LICENSE_UNKNOWN)
+        {
+            Logger::GetInstance()->Log("License validation failed..");
+        }
+    }
 
-	NIEngine::GetInstance()->Start();
-	
-	SocketServer server;
-	server.SetClientLog(clientIn,clientOut);
-	server.Launch();
+    return liceneStat;
+}
 
-	Logger::GetInstance()->Log("Server launched...");
+int GetLimitedTime()
+{
+    return g_limitedTime;
+}
 
-	Logger::GetInstance()->Log("Input command:\n t - terminate server\n x - exit\n",true);
-	bool shouldExit = FALSE;
-	while(shouldExit == FALSE)
-	{
-		int ch = getchar();
-		switch (ch)
-		{
-		case 'x':
-			server.Terminate();
-			NIEngine::GetInstance()->Stop();
-			shouldExit = TRUE;
-			break;
-		case 't':
-			server.Terminate();
-			break;
-		default:
-			break;
-		}
-	}
+void StartNIServer()
+{
+    if(g_isRunning == false)
+    {
+        HttpRequest(g_logIn.c_str());
+        NIEngine::GetInstance()->Start();
 
-	HttpRequest(logOut.c_str());
-	return 1;
+        g_isRunning = true;
+    }
+
+    return;
+}
+
+void StopNIServer()
+{
+    if(g_isRunning == true)
+    {
+        NIEngine::GetInstance()->Stop();
+        HttpRequest(g_logOut.c_str());
+
+        g_isRunning = false;
+    }
+    return;
 }

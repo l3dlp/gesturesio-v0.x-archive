@@ -17,6 +17,12 @@ public:
     
 private:
     Ui::MainWindow *ui;
+    QTimer* timer;
+
+private slots:
+    void startNIServer();
+    void stopNIServer();
+    void licenseExpired();
 };
 
 #endif // MAINWINDOW_H
