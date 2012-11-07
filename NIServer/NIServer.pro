@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += network
 
 TARGET = NIServer
 TEMPLATE = app
@@ -17,7 +18,8 @@ SOURCES += main.cpp\
     src/TinyThread/tinythread.cpp \
     src/vjson/json.cpp \
     src/vjson/block_allocator.cpp \
-    src/NIServer.cpp
+    src/NIServer.cpp \
+    src/NITcpServer.cpp
 
 HEADERS  += mainwindow.h \
     Include/Utils.h \
@@ -25,7 +27,8 @@ HEADERS  += mainwindow.h \
     Include/TinyThread/tinythread.h \
     Include/vjason/json.h \
     Include/vjason/block_allocator.h \
-    Include/NIServer.h
+    Include/NIServer.h \
+    Include/NITcpServer.h
 
 FORMS    += mainwindow.ui
 
