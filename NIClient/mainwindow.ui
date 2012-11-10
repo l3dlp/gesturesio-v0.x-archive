@@ -27,7 +27,7 @@
    <widget class="QPushButton" name="connectBtn">
     <property name="geometry">
      <rect>
-      <x>60</x>
+      <x>20</x>
       <y>180</y>
       <width>101</width>
       <height>41</height>
@@ -53,7 +53,7 @@
    <widget class="QPushButton" name="disconnectBtn">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>160</x>
       <y>180</y>
       <width>101</width>
       <height>41</height>
@@ -61,6 +61,19 @@
     </property>
     <property name="text">
      <string>Disconnect</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="querybtn">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>180</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Query</string>
     </property>
    </widget>
   </widget>

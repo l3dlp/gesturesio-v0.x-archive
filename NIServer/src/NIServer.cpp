@@ -20,6 +20,9 @@ struct XmlElement
 string g_keyword;
 string g_logIn;
 string g_logOut;
+string g_clientIn;
+string g_clientOut;
+
 int g_limitedTime = 0;
 bool g_isRunning = false;
 
@@ -138,6 +141,8 @@ license_State CheckLicense()
 
     g_logIn = "https://api.activedooh.com/v1/" + keyword + "/log/in.xml";
     g_logOut = "https://api.activedooh.com/v1/" + keyword + "/log/out.xml";
+    g_clientIn = "https://api.activedooh.com/v1" + keyword + "/client/in.xml";
+    g_clientOut = "https://api.activedooh.com/v1" + keyword + "/client/out.xml";
 
     if (keyword.empty())
     {
@@ -165,6 +170,7 @@ void StartNIServer()
     if(g_isRunning == false)
     {
         HttpRequest(g_logIn.c_str());
+
         NIEngine::GetInstance()->Start();
 
         g_isRunning = true;

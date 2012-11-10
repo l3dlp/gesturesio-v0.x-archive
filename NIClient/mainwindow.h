@@ -19,6 +19,7 @@ public:
 public slots:
     void connectServer();
     void disconnectServer();
+    void query();
     void sendCommand();
 
 private:

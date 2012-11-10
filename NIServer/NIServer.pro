@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     src/vjson/json.cpp \
     src/vjson/block_allocator.cpp \
     src/NIServer.cpp \
-    src/NITcpServer.cpp
+    src/NITcpServer.cpp \
+    src/CmdParser.cpp
 
 HEADERS  += mainwindow.h \
     Include/Utils.h \
@@ -28,7 +29,8 @@ HEADERS  += mainwindow.h \
     Include/vjason/json.h \
     Include/vjason/block_allocator.h \
     Include/NIServer.h \
-    Include/NITcpServer.h
+    Include/NITcpServer.h \
+    Include/CmdParser.h
 
 FORMS    += mainwindow.ui
 
