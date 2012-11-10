@@ -31,7 +31,7 @@ void MainWindow::startNIServer()
     switch(stat)
     {
     case LICENSE_VALID:
-        //StartNIServer();
+        StartNIServer();
         ui->statusLabel->setText("License is valid, NIServer started.");
         break;
     case LICENSE_INVALID:

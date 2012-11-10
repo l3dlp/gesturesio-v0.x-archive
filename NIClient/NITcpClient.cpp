@@ -7,6 +7,7 @@ NITcpClient::NITcpClient(QObject *parent): QObject(parent)
 {
     connect(&client,SIGNAL(connected()),this,SLOT(serverConnected()));
     isConnected = false;
+    sendInLoop = false;
 }
 
 NITcpClient::~NITcpClient()
@@ -33,10 +34,12 @@ void NITcpClient::serverConnected()
 
 }
 
-void NITcpClient::transfer(QString msg)
+void NITcpClient::transfer(QString msg, bool loop)
 {
     if(isConnected)
     {
+        sendInLoop = loop;
+        cmd = msg;
         client.write(msg.toAscii(),msg.length());
     }
 }
@@ -45,5 +48,13 @@ void NITcpClient::startRead()
 {
     char buffer[BUFFER_SIZE] = {0};
     client.read(buffer,client.bytesAvailable());
-    qDebug(buffer);
+
+    QString str(buffer);
+    emit dataAvailable(str);
+
+    if(sendInLoop && isConnected)
+        client.write(cmd.toAscii(),cmd.length());
+
+    //qDebug(buffer);
 }
+

@@ -14,7 +14,10 @@ public:
     ~NITcpClient();
     void connectServer(QString address, quint16 port);
     void disconnectServer();
-    void transfer(QString msg);
+    void transfer(QString msg, bool loop);
+
+signals:
+    void dataAvailable(QString);
 
 public slots:
     void serverConnected();
@@ -23,6 +26,8 @@ public slots:
 private:
     QTcpSocket client;
     bool isConnected;
+    bool sendInLoop;
+    QString cmd;
     static const int BUFFER_SIZE = 1024;
 };
 

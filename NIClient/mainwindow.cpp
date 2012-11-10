@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->disconnectBtn,SIGNAL(clicked()),this,SLOT(disconnectServer()));
     connect(ui->querybtn,SIGNAL(clicked()),this,SLOT(query()));
     connect(ui->cmdText,SIGNAL(textChanged()),this,SLOT(sendCommand()));
+    connect(&client, SIGNAL(dataAvailable(QString)), this, SLOT(updateData(QString)));
 }
 
 MainWindow::~MainWindow()
@@ -31,10 +32,15 @@ void MainWindow::disconnectServer()
 void MainWindow::query()
 {
     QString str = "getCoordsT";
-    client.transfer(str);
+    client.transfer(str,true);
 }
 
 void MainWindow::sendCommand()
 {
-    client.transfer(ui->cmdText->toPlainText());
+    client.transfer(ui->cmdText->toPlainText(),false);
+}
+
+void MainWindow::updateData(QString data)
+{
+    ui->serverEchoText->setText(data);
 }

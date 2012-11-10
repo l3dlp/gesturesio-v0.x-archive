@@ -21,6 +21,7 @@ public slots:
     void disconnectServer();
     void query();
     void sendCommand();
+    void updateData(QString data);
 
 private:
     Ui::MainWindow *ui;
