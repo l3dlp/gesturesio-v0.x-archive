@@ -31,7 +31,7 @@ void MainWindow::startNIServer()
     switch(stat)
     {
     case LICENSE_VALID:
-        StartNIServer();
+        StartNIService();
         ui->statusLabel->setText("License is valid, NIServer started.");
         break;
     case LICENSE_INVALID:
@@ -52,13 +52,13 @@ void MainWindow::startNIServer()
 
 void MainWindow::stopNIServer()
 {
-    StopNIServer();
+    StopNIService();
 }
 
 void MainWindow::licenseExpired()
 {
     timer->stop();
-    //StopNIServer();
+    //StopNIService();
     //QMessageBox::information(this,"info","Times out, license expired! NIServer stopped.");
     ui->statusLabel->setText("Times out, license expired! NIServer stopped.");
 }

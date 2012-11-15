@@ -1,11 +1,88 @@
 #include "Utils.h"
 #include <ctime>
+#include <stack>
+#include <algorithm>
 #include "curl/curl.h"
+#include "expat/expat.h"
 
 using namespace std;
 
-#define  LOG_FILE_NAME "log.txt"
+//// Xml Parser //////////////////////////////
+int Eventcnt = 0;
+stack<XmlElement> elemStack;   // Temperal storage for elements during the parsing process.
+vector<XmlElement> elemVector; // Store parsed elements
 
+void default_hndl(void *data, const char *s, int len)
+{
+    fwrite(s, len, sizeof(char), stdout);
+}
+
+void printcurrent(XML_Parser p)
+{
+    XML_SetDefaultHandler(p, default_hndl);
+    XML_DefaultCurrent(p);
+    XML_SetDefaultHandler(p, (XML_DefaultHandler) 0);
+}
+
+// Start tag(e.g., <Status>) comes, save the element name
+void start_hndl(void *data, const char *el, const char **attr)
+{
+    printf("\n%4d: Start tag %s - ", Eventcnt++, el);
+    printcurrent((XML_Parser) data);
+
+    XmlElement tmp;
+    tmp.name = string(el);
+    elemStack.push(tmp);
+}
+
+// End tag(e.g., </Status>) comes, delete the element
+void end_hndl(void *data, const char *el)
+{
+    printf("\n%4d: End tag %s -\n", Eventcnt++, el);
+
+    elemStack.pop();
+}
+
+// Data (e.g.,100 in <Status>100</Status>) comes,
+// Get current element from stock, attach the data, than save in the vector.
+void char_hndl(void *data, const char *txt, int txtlen)
+{
+    printf("\n%4d: Text - ", Eventcnt++);
+    fwrite(txt, txtlen, sizeof(char), stdout);
+
+    XmlElement tmp = elemStack.top();
+    tmp.data = string(txt,txtlen);
+    elemVector.push_back(tmp);
+}
+
+// Parse given xml string, return status
+// Save parsed elements to the vector as well.
+bool ParseXml(string str, vector<XmlElement>& elements)
+{
+    bool res = false;
+
+    XML_Parser p = XML_ParserCreate(NULL);
+
+    if (p)
+    {
+        XML_UseParserAsHandlerArg(p);
+        XML_SetElementHandler(p, start_hndl, end_hndl);
+        XML_SetCharacterDataHandler(p, char_hndl);
+
+        elemVector.clear();
+        res = XML_Parse(p, str.c_str(), str.size(), true);
+        if(res)
+        {
+            elements = elemVector;
+        }
+    }
+
+    return res;
+}
+
+
+
+//////Http Request ////////////////////////
 
 size_t write_to_string(void *ptr, size_t size, size_t nmemb, std::string& stream)
 {
@@ -45,9 +122,12 @@ string HttpRequest(const char* url)
 }
 
 
+
+//////Logger//////////////////////////////////
+const string  LOG_FILE_NAME = "log.txt";
 Logger* Logger::_instance = NULL;
 
-Logger::Logger(char* fileName)
+Logger::Logger(const char* fileName)
 {
 	_stream.open(fileName,ios::app);
 }
@@ -56,7 +136,7 @@ Logger* Logger::GetInstance()
 {
 	if (_instance == NULL)
 	{
-		_instance = new Logger(LOG_FILE_NAME);
+        _instance = new Logger(LOG_FILE_NAME.c_str());
 	}
 	return _instance;
 }
@@ -67,7 +147,9 @@ void Logger::Log(string logLine, bool printConsole)
 	tm* gmtm = gmtime(&now);
 	if (gmtm != NULL)
 	{
-		_stream << asctime(gmtm) << logLine.c_str() << endl;
+        string str(asctime(gmtm));
+        std::replace(str.begin(),str.end(),'\n','\t'); // replace newline with tab
+        _stream << str.c_str() << logLine.c_str() << endl;
 	}
 	if (printConsole)
 	{
@@ -80,6 +162,10 @@ Logger::~Logger()
 {
 	_stream.close();
 }
+
+
+
+///// Jason Parser //////////////////////
 
 JasonParsor::JasonParsor()
 {
@@ -126,7 +212,6 @@ void JasonParsor::Print(json_value *value, int ident)
 		break;
 	}
 }
-
 
 bool JasonParsor::Parse(char* source)
 {

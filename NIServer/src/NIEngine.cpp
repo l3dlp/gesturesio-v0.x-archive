@@ -135,6 +135,8 @@ XnBool NIEngine::Start()
 
 	THREADSTRUCT* param = new THREADSTRUCT;
 	param->_this = this;
+    // TinyThread++, a portable thread implementation is used.
+    // More info here: http://tinythreadpp.bitsnbites.eu/
 	thread niThread(StartThread,param);
 	//niThread.join();
 	niThread.detach();

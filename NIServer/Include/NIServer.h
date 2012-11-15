@@ -10,8 +10,8 @@ enum license_State
 };
 
 license_State CheckLicense();
-void StartNIServer();
-void StopNIServer();
+void StartNIService();
+void StopNIService();
 int GetLimitedTime();
 
 #endif // NISERVER_H

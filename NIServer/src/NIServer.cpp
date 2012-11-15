@@ -6,16 +6,12 @@
 #include <stack>
 #include "NIEngine.h"
 #include "Utils.h"
-#include "expat/expat.h"
 #include "NIServer.h"
+#include "NITcpServer.h"
 
 using namespace std;
 
-struct XmlElement
-{
-	string name;
-	string data;
-};
+#define SERVER_PORT 5678
 
 string g_keyword;
 string g_logIn;
@@ -25,52 +21,7 @@ string g_clientOut;
 
 int g_limitedTime = 0;
 bool g_isRunning = false;
-
-int Eventcnt = 0;
-
-stack<XmlElement> elemStack;
-vector<XmlElement> elemVector;
-
-void default_hndl(void *data, const char *s, int len) 
-{
-	fwrite(s, len, sizeof(char), stdout);
-}
-
-void printcurrent(XML_Parser p)
-{
-	XML_SetDefaultHandler(p, default_hndl);
-	XML_DefaultCurrent(p);
-	XML_SetDefaultHandler(p, (XML_DefaultHandler) 0);
-}
-
-void start_hndl(void *data, const char *el, const char **attr)
-{
-	printf("\n%4d: Start tag %s - ", Eventcnt++, el);
-	printcurrent((XML_Parser) data);
-
-	// push current element
-	XmlElement tmp;
-	tmp.name = string(el);
-	elemStack.push(tmp);
-}
-
-void end_hndl(void *data, const char *el) 
-{
-	printf("\n%4d: End tag %s -\n", Eventcnt++, el);
-	 
-	elemStack.pop();
-}
-
-void char_hndl(void *data, const char *txt, int txtlen) 
-{
-	printf("\n%4d: Text - ", Eventcnt++);
-	fwrite(txt, txtlen, sizeof(char), stdout);
-	
-	// save current element
-	XmlElement tmp = elemStack.top();
-	tmp.data = string(txt,txtlen);
-	elemVector.push_back(tmp);
-}
+NITcpServer* g_tcpServer = NULL;
 
 string ReadLicense(char* fileName)
 {
@@ -98,35 +49,24 @@ license_State ValidateLicense(string keyword)
 	string response = HttpRequest(url.c_str());
 
 	// parse xml
-	XML_Parser p = XML_ParserCreate(NULL);
-	if (p)
-	{
-		XML_UseParserAsHandlerArg(p);
-		XML_SetElementHandler(p, start_hndl, end_hndl);
-		XML_SetCharacterDataHandler(p, char_hndl);
+    vector<XmlElement> elements;
+    bool res = ParseXml(response,elements);
 
-		elemVector.clear();
-		bool parseRes = XML_Parse(p, response.c_str(), response.size(), true);
-		if (parseRes)
-		{
-			// parse successfully, now we need to check the value
-			if (elemVector.empty() == false)
-			{
-				vector<XmlElement>::iterator it;
-				for (it = elemVector.begin(); it != elemVector.end(); it++)
-				{
-					if (it->name == "status")
-					{
-                        licenseStat = (license_State)atoi(it->data.c_str());
-					}
-					if (it->name == "time_limit" )
-					{
-                        g_limitedTime = atoi(it->data.c_str());
-					}
-				}
-			}
-		}
-	}
+    if(res && elements.empty() == false)
+    {
+        vector<XmlElement>::iterator it;
+        for (it = elements.begin(); it != elements.end(); it++)
+        {
+            if (it->name == "status")
+            {
+                licenseStat = (license_State)atoi(it->data.c_str());
+            }
+            if (it->name == "time_limit" )
+            {
+                g_limitedTime = atoi(it->data.c_str());
+            }
+        }
+    }
 
     return licenseStat;
 }
@@ -165,13 +105,16 @@ int GetLimitedTime()
     return g_limitedTime;
 }
 
-void StartNIServer()
+void StartNIService()
 {
     if(g_isRunning == false)
     {
         HttpRequest(g_logIn.c_str());
 
-        NIEngine::GetInstance()->Start();
+        g_tcpServer = new NITcpServer();
+        g_tcpServer->Start(SERVER_PORT);
+
+        //NIEngine::GetInstance()->Start();
 
         g_isRunning = true;
     }
@@ -179,10 +122,14 @@ void StartNIServer()
     return;
 }
 
-void StopNIServer()
+void StopNIService()
 {
     if(g_isRunning == true)
     {
+        g_tcpServer->Stop();
+        delete g_tcpServer;
+        g_tcpServer = NULL;
+
         NIEngine::GetInstance()->Stop();
         HttpRequest(g_logOut.c_str());
 

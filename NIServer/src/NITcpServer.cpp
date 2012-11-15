@@ -8,15 +8,26 @@ using namespace std;
 NITcpServer::NITcpServer(QObject *parent): QObject(parent)
 {
     connect(&server,SIGNAL(newConnection()),this,SLOT(acceptConnection()));
-    connect(this,SIGNAL(queryAvaiable(QString)),&parser,SLOT(parse(QString)));
-    connect(&parser,SIGNAL(parsed(QString)),this,SLOT(startWrite(QString)));
 
-    server.listen(QHostAddress::Any,5678);
+    // Once command from client is received, forward it to the command parser.
+    connect(this,SIGNAL(queryAvaiable(QString)),&parser,SLOT(parse(QString)));
+
+    // Once command from client is parsed, send back the data client asks for.
+    connect(&parser,SIGNAL(parsed(QString)),this,SLOT(startWrite(QString)));
+}
+
+void NITcpServer::Start(int port)
+{
+    server.listen(QHostAddress::Any, port);
+}
+
+void NITcpServer::Stop()
+{
+   server.close();
 }
 
 NITcpServer::~NITcpServer()
 {
-    server.close();
 }
 
 void NITcpServer::acceptConnection()
@@ -26,7 +37,7 @@ void NITcpServer::acceptConnection()
     connect(client,SIGNAL(disconnected()),this,SLOT(clientDisconnected()));
 
     // Report to webserver that a new client connected.
-    HttpRequest(clientIn.c_str()); // send message to web server
+    HttpRequest(clientIn.c_str());
 }
 
 void NITcpServer::startRead()
@@ -47,7 +58,7 @@ void NITcpServer::startWrite(QString echo)
 void NITcpServer::clientDisconnected()
 {
     // Report to webserver that the client is disconnected.
-    HttpRequest(clientOut.c_str()); // send message to web server
+    HttpRequest(clientOut.c_str());
 }
 
 void NITcpServer::SetClientLog(string in, string out)

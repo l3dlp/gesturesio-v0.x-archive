@@ -13,9 +13,12 @@ class NITcpServer: public QObject
 public:
     NITcpServer(QObject* parent = 0);
     ~NITcpServer();
+
+    void Start(int port);
+    void Stop();
     void SetClientLog(std::string, std::string);
 
-public slots:
+private slots:
     void acceptConnection();
     void startRead();
     void startWrite(QString);

@@ -9,6 +9,9 @@ typedef struct
 	float timeStamp;
 }GESTURERECORD;
 
+//// 3D point filter
+// Using one euro filter, a simple speed-based Low-pass filter.
+// More info here: http://www.lifl.fr/~casiez/1euro/
 struct Point3DFilter
 {
 	Point3DFilter(double _freq, double _mincutoff, double _beta, double _dcutoff): isEnabled(true)

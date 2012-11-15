@@ -5,8 +5,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    NITcpServer server;
-
+    //NITcpServer g_tcpServer;
     MainWindow w;
     w.show();
     
