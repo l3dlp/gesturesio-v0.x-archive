@@ -11,7 +11,7 @@
 
 using namespace std;
 
-#define SERVER_PORT 5678
+#define SERVER_PORT 6789
 
 string g_keyword;
 string g_logIn;
