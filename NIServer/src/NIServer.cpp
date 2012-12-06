@@ -114,7 +114,8 @@ void StartNIService()
         g_tcpServer = new NITcpServer();
         g_tcpServer->Start(SERVER_PORT);
 
-        //NIEngine::GetInstance()->Start();
+        NIEngine::GetInstance()->SetProfile(SKEL_PROFILE_HANDS_AND_HEAD);
+        NIEngine::GetInstance()->Start();
 
         g_isRunning = true;
     }

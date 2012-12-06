@@ -9,6 +9,19 @@ typedef struct
 	float timeStamp;
 }GESTURERECORD;
 
+typedef struct
+{
+    XnPoint3D real;
+    XnPoint3D projective;
+
+}JointPosition;
+
+typedef enum
+{
+    SKEL_PROFILE_HANDS,
+    SKEL_PROFILE_HANDS_AND_HEAD
+}NISkelProfile;
+
 //// 3D point filter
 // Using one euro filter, a simple speed-based Low-pass filter.
 // More info here: http://www.lifl.fr/~casiez/1euro/
@@ -67,6 +80,7 @@ public:
 class NIEngine
 {
 private:
+    static const int JOINTS_SUPPORTED = 25; // OpenNI supports 24 joints, but the joints enumator starts from 1, so we add 1.
 	static NIEngine* _instance;
 	xn::Context _niContext;
 	xn::ScriptNode _niScriptNode;
@@ -75,6 +89,9 @@ private:
 	xn::GestureGenerator _gestureGenerator;
 	XnBool _shouldStop;
 	XnBool _running;
+    JointPosition _joints[JOINTS_SUPPORTED];
+    int _jointsMask[JOINTS_SUPPORTED];
+    Point3DFilter* _filters[JOINTS_SUPPORTED];
 	XnSkeletonJointPosition _leftHand;
 	XnSkeletonJointPosition _rightHand;
 	XnSkeletonJointPosition _headPos;
@@ -100,8 +117,9 @@ public:
 
 	~NIEngine();
 	XnBool IsRunning();
-	XnSkeletonJointPosition GetLeftHandPos();
-	XnSkeletonJointPosition GetRightHandPos();
+    void SetProfile(NISkelProfile profile);
+    XnPoint3D GetLeftHandPos();
+    XnPoint3D GetRightHandPos();
 	XnPoint3D GetLeftHandPosProjective();
 	XnPoint3D GetRightHandPosProjective();
 	XnPoint3D GetHeadPosProjective();
@@ -112,6 +130,9 @@ private:
 	XnBool FileExists(const char *fn);
 	static void StartThread(void* arg);
 	void ProcessData();
+    void ReadJoints(XnUserID userID);
+    void ConstructFilters();
+    void DestructFilters();
 };
 
 typedef struct  

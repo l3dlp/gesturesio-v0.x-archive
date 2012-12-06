@@ -208,6 +208,32 @@ void NIEngine::CalibrationCompleted(xn::SkeletonCapability& capability, XnUserID
 	}
 }
 
+void NIEngine::ConstructFilters()
+{
+    double frequency = 30; // 30FPS by default
+    double mincutoff = 1;  // min cutoff frequency
+    double beta = 0.05;     // cutoff slope
+    double dcutoff = 1;    // cutoff frequency for derivate
+
+    // Construct filters
+    for(int i = 1; i < JOINTS_SUPPORTED; i++)
+    {
+        _filters[i] = new Point3DFilter(frequency,mincutoff,beta,dcutoff);
+    }
+}
+
+void NIEngine::DestructFilters()
+{
+    for(int i = 1; i < JOINTS_SUPPORTED; i++)
+    {
+        if(_filters[i] != NULL)
+        {
+            delete _filters[i];
+            _filters[i] = NULL;
+        }
+    }
+}
+
 void NIEngine::ProcessData()
 {
 	_shouldStop = FALSE;
@@ -215,16 +241,9 @@ void NIEngine::ProcessData()
 	XnUInt16 numOfUsers;
 	XnUserID users[MAX_NUM_USERS];
 	
-	double frequency = 30; // 30FPS by default
-	double mincutoff = 1;  // min cutoff frequency
-	double beta = 0.05;     // cutoff slope
-	double dcutoff = 1;    // cutoff frequency for derivate
+    double lastTs = 0;  // last time stamp
 
-	Point3DFilter headFilter(frequency,mincutoff,beta,dcutoff);
-	Point3DFilter leftHandFilter(frequency,mincutoff,beta,dcutoff);
-	Point3DFilter rightHandFilter(frequency,mincutoff,beta,dcutoff);
-
-	double lastTs = 0;  // last time stamp
+    ConstructFilters();
 
 	while (_shouldStop == FALSE)
 	{
@@ -232,8 +251,6 @@ void NIEngine::ProcessData()
 		numOfUsers = MAX_NUM_USERS;
 
 		_userGenerator.GetUsers(users, numOfUsers);
-		int numTracked=0;
-		int userToPrint=-1;
 
 		// simple user selection - choose the closest one
 		XnUserID closestUserID = 0;  
@@ -256,72 +273,72 @@ void NIEngine::ProcessData()
 		// Valid user ID starts from 1
 		if(closestUserID > 0)
 		{
-			XnSkeletonJointPosition tmpPos;
-			XnPoint3D filteredTmpPos;
-			XnPoint3D tmpPosProjective;
-			XnSkeletonJointOrientation tmpOrient;
+            double currentTs = (double)_userGenerator.GetTimestamp() / 1000000;
 
-			XnUserID curUserID = closestUserID;
+            // Monitor frame dropping
+            if (currentTs - lastTs > 0.034)
+            {
+                printf("%d frames dropped!\n",(int)abs(currentTs-lastTs / 0.033));
+            }
+            lastTs = currentTs;
 
-			double currentTs = (double)_userGenerator.GetTimestamp() / 1000000;
-
-			// Monitor frame dropping
-			if (currentTs - lastTs > 0.034)
-			{
-				printf("%d frames dropped!\n",(int)abs(currentTs-lastTs / 0.033));
-			}
-
-			// Filter left hand
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(curUserID,XN_SKEL_LEFT_HAND,tmpPos);
-			if (tmpPos.fConfidence > 0.5)
-			{
-				filteredTmpPos = leftHandFilter.filter(tmpPos.position,currentTs);
-				//printf("time-diff %f pos-diff %f \n",currentTs - lastTs, PointDist(&tmpPos.position,&filteredTmpPos));
-				_depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos,&tmpPosProjective);
-				_leftHand = tmpPos;
-				_leftHand.position = filteredTmpPos;
-				_leftHandPosProjective = tmpPosProjective;
-			}
-							
-			// Filter right hand
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(curUserID,XN_SKEL_RIGHT_HAND,tmpPos);
-			if (tmpPos.fConfidence > 0.5)
-			{
-				filteredTmpPos = rightHandFilter.filter(tmpPos.position,currentTs);
-				//printf("time-diff %f pos-diff %f \n",currentTs - lastTs, PointDist(&tmpPos.position,&filteredTmpPos));
-				_depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos,&tmpPosProjective);
-				_rightHand = tmpPos;
-				_rightHand.position = filteredTmpPos;
-				_rightHandPosProjective = tmpPosProjective;
-			}
-
-			// Filter head
-			_userGenerator.GetSkeletonCap().GetSkeletonJointPosition(curUserID,XN_SKEL_HEAD,tmpPos);
-			_userGenerator.GetSkeletonCap().GetSkeletonJointOrientation(curUserID,XN_SKEL_HEAD,tmpOrient);
-			if (tmpPos.fConfidence > 0.5)
-			{
-				filteredTmpPos = headFilter.filter(tmpPos.position,currentTs);
-				_depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos,&tmpPosProjective);
-				_headPos = tmpPos;
-				_headPos.position = filteredTmpPos;
-				_headPosProjective = tmpPosProjective;
-
-				_headOrient = tmpOrient; // not filtered
-			}
-
-			lastTs = currentTs;
-			
-			//printf("user %d: left hand at (%6.2f,%6.2f,%6.2f); rigt hand at (%6.2f,%6.2f,%6.2f)\n",users[i],
-			//	_leftHand.position.X,
-			//	_leftHand.position.Y,
-			//	_leftHand.position.Z,
-			//	_rightHand.position.X,
-			//	_rightHand.position.Y,
-			//	_rightHand.position.Z);
+            XnUserID curUserID = closestUserID;
+            ReadJoints(curUserID);
 		}
 	}
-	_running = FALSE;
 
+    DestructFilters();
+
+	_running = FALSE;
+}
+
+void NIEngine::SetProfile(NISkelProfile profile)
+{
+    // Reset mask
+    for(int i = 1; i < JOINTS_SUPPORTED; i++)
+    {
+        _jointsMask[i] = 0;
+    }
+
+    switch(profile)
+    {
+    case SKEL_PROFILE_HANDS:
+        _jointsMask[XN_SKEL_LEFT_HAND] = 1;
+        _jointsMask[XN_SKEL_RIGHT_HAND] = 1;
+        break;
+    case SKEL_PROFILE_HANDS_AND_HEAD:
+        _jointsMask[XN_SKEL_LEFT_HAND] = 1;
+        _jointsMask[XN_SKEL_RIGHT_HAND] = 1;
+        _jointsMask[XN_SKEL_HEAD] = 1;
+        break;
+    default:
+        break;
+    }
+}
+
+void NIEngine::ReadJoints(XnUserID userID)
+{
+    XnSkeletonJointPosition tmpPos;
+    XnPoint3D filteredTmpPos;
+    XnPoint3D tmpPosProjective;
+
+    double currentTs = (double)_userGenerator.GetTimestamp() / 1000000;
+
+    for(int i = 1; i < JOINTS_SUPPORTED; i++)
+    {
+        if(_jointsMask[i] == 1)
+        {
+            _userGenerator.GetSkeletonCap().GetSkeletonJointPosition(userID,(XnSkeletonJoint)i,tmpPos);
+            if (tmpPos.fConfidence > 0.5)
+            {
+                filteredTmpPos = _filters[i]->filter(tmpPos.position,currentTs);
+
+                _depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos,&tmpPosProjective);
+                _joints[i].real = filteredTmpPos;
+                _joints[i].projective = tmpPosProjective;
+            }
+        }
+    }
 }
 
 void NIEngine::StartThread(void* arg)
@@ -360,29 +377,29 @@ XnBool NIEngine::FileExists(const char *fn)
 	return exists;
 }
 
-XnSkeletonJointPosition NIEngine::GetLeftHandPos()
+XnPoint3D NIEngine::GetLeftHandPos()
 {
-	return _leftHand;
+    return _joints[XN_SKEL_LEFT_HAND].real;
 }
 
-XnSkeletonJointPosition NIEngine::GetRightHandPos()
+XnPoint3D NIEngine::GetRightHandPos()
 {
-	return _rightHand;
+    return _joints[XN_SKEL_RIGHT_HAND].real;
 }
 
 XnPoint3D NIEngine::GetLeftHandPosProjective()
 {
-	return _leftHandPosProjective;
+    return _joints[XN_SKEL_LEFT_HAND].projective;
 }
 
 XnPoint3D NIEngine::GetRightHandPosProjective()
 {
-	return _rightHandPosProjective;
+    return _joints[XN_SKEL_RIGHT_HAND].projective;
 }
 
 XnPoint3D NIEngine::GetHeadPosProjective()
 {
-	return _headPosProjective;
+    return _joints[XN_SKEL_HEAD].projective;
 }
 
 GESTURERECORD NIEngine::GetGesture()
