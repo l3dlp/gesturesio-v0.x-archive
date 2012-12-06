@@ -173,9 +173,10 @@ void NIEngine::GestureRecognized(xn::GestureGenerator& generator,const XnChar* s
 	{
 		gestureRec.timeStamp = -1.0f; //invalid
 	}
+
 	if (gestureRec.timeStamp >= 0)
 	{
-		printf("%s hand gesture detected.%f %f \n",gestureRec.isRightHand ? "right":"left",leftDist,rightDist);
+        Logger::GetInstance()->Log("hand gesture detected.");
 		_gestures.push_back(gestureRec);
 	}
 
@@ -404,16 +405,14 @@ XnPoint3D NIEngine::GetHeadPosProjective()
 
 GESTURERECORD NIEngine::GetGesture()
 {
-	GESTURERECORD gestureRec;
-	
+    GESTURERECORD gestureRec;
+    gestureRec.name = ""; // Empty name indicates that gesture is invalid.
+
 	if (_gestures.empty() == false)
 	{
 		gestureRec = _gestures.back();
 		_gestures.pop_back();
 	}
-	else
-	{
-		gestureRec.timeStamp = -1.0f;
-	}
+
 	return gestureRec;
 }

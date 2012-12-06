@@ -37,7 +37,9 @@ void NITcpServer::acceptConnection()
     connect(client,SIGNAL(disconnected()),this,SLOT(clientDisconnected()));
 
     // Report to webserver that a new client connected.
-    HttpRequest(clientIn.c_str());
+    // Currently comment out as it takes too much time.
+    //HttpRequest(clientIn.c_str());
+    //Logger::GetInstance()->Log(clientIn);
 }
 
 void NITcpServer::startRead()
@@ -58,7 +60,7 @@ void NITcpServer::startWrite(QString echo)
 void NITcpServer::clientDisconnected()
 {
     // Report to webserver that the client is disconnected.
-    HttpRequest(clientOut.c_str());
+    //HttpRequest(clientOut.c_str());
 }
 
 void NITcpServer::SetClientLog(string in, string out)

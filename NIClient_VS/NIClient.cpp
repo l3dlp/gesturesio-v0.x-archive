@@ -296,21 +296,21 @@ void glutDisplay (void)
 	float hx = headPosX / CROPBOX_WIDTH * GL_WIN_SIZE_X;
 	float hy = headPosY / CROPBOX_HEIGHT * GL_WIN_SIZE_Y;
 	float hz = (1 - headPosZ / CROPBOX_DEPTH) * 100; 
-	DrawPoint(hx,hy,20,1);  //Green
+	DrawPoint(hx,hy,40,1);  //Green
 
 	// Draw hand points
-	DrawPoint(lx,ly,5,leftHandColor);
-	DrawPoint(rx,ry,5,rightHandColor);
+	DrawPoint(lx,ly,20,leftHandColor);
+	DrawPoint(rx,ry,20,rightHandColor);
 
 	// Draw indication of gesture event
-	if (leftGesture.compare("NONE") != 0)
-	{
-		DrawPoint(lx,ly,50,3);
-	}
-	if (rightGesture.compare("NONE") != 0)
-	{
-		DrawPoint(rx,ry,50,3);
-	}
+	//if (leftGesture.compare("NONE") != 0)
+	//{
+	//	DrawPoint(lx,ly,50,3);
+	//}
+	//if (rightGesture.compare("NONE") != 0)
+	//{
+	//	DrawPoint(rx,ry,50,3);
+	//}
 
 #endif
 

@@ -112,6 +112,7 @@ void StartNIService()
         HttpRequest(g_logIn.c_str());
 
         g_tcpServer = new NITcpServer();
+        g_tcpServer->SetClientLog(g_clientIn,g_clientOut);
         g_tcpServer->Start(SERVER_PORT);
 
         NIEngine::GetInstance()->SetProfile(SKEL_PROFILE_HANDS_AND_HEAD);

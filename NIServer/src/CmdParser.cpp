@@ -33,7 +33,7 @@ void CmdParser::parse(QString cmd)
     std::string rightGesture = "NONE";
 
     GESTURERECORD gestureRec = NIEngine::GetInstance()->GetGesture();
-    if (gestureRec.timeStamp >= 0) 		// TODO: check timestamp and give up outdate gestures
+    if (gestureRec.name != "") 		// TODO: check timestamp and give up outdate gestures
     {
         //printf("valid gesture %s %d\n",gestureRec.name.c_str(),gestureRec.isRightHand);
 
