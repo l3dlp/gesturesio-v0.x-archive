@@ -9,6 +9,7 @@ private:
 	static NIEngine* _instance;
 	openni::Device _device;
 	nite::UserTracker* _pUserTracker;
+	nite::HandTracker* _pHandTracker;
 	bool _isAlive;
 	bool _shouldRun;
 

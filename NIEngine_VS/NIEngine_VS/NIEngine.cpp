@@ -31,6 +31,7 @@ void NIEngine::StartThread(void* arg)
 void NIEngine::ProcessData()
 {
 	nite::UserTrackerFrameRef userTrackerFrame;
+	nite::HandTrackerFrameRef handFrame;
 	_isAlive = true;
 	_shouldRun = true;
 
@@ -70,6 +71,43 @@ void NIEngine::ProcessData()
 				ReadSkeleton(pUser);
 			}
 		}
+
+		// Read hand gesture
+		niteRc = _pHandTracker->readFrame(&handFrame);
+		if (niteRc != nite::STATUS_OK)
+		{
+			printf("Failed to read next hand frame.\n");
+			continue;
+		}
+
+		const nite::Array<nite::GestureData>& gestures = handFrame.getGestures();
+		for (int i = 0; i < gestures.getSize(); ++i)
+		{
+			if (gestures[i].isComplete())
+			{
+				nite::HandId handID;
+				_pHandTracker->startHandTracking(gestures[i].getCurrentPosition(),&handID);
+			}
+		}
+
+		const nite::Array<nite::HandData>& hands = handFrame.getHands();
+		for (int i = 0; i < hands.getSize(); ++i)
+		{
+			const nite::HandData& hand = hands[i];
+			if (hand.isTracking())
+			{
+				if (hand.isNew())
+				{
+					printf("New hand %d found.\n",hand.getId());
+				}
+				//printf("Hand Position: %5.2f,%5.2f,%5.2f\n",hand.getPosition().x,hand.getPosition().y,hand.getPosition().z);
+			}
+			else
+			{
+				printf("Hand %d lost\n",hand.getId());
+			}
+		}
+
 	}
 }
 
@@ -87,11 +125,11 @@ void NIEngine::ReadSkeleton(const nite::UserData* pUser)
 	// NOTE: use 0.5 as I'm not sure now if NiTE2 has new definition/improvement on the confidence.
 	if (leftHand.getPositionConfidence() >= 0.5f)
 	{
-		printf("L(%5.2f,%5.2f,%5.2f)\n",leftHand.getPosition().x,leftHand.getPosition().y,leftHand.getPosition().z);
+		//printf("L(%5.2f,%5.2f,%5.2f)\n",leftHand.getPosition().x,leftHand.getPosition().y,leftHand.getPosition().z);
 	}
 	if (rightHand.getPositionConfidence() >= 0.5f)
 	{
-		printf("R(%5.2f,%5.2f,%5.2f)\n",rightHand.getPosition().x,rightHand.getPosition().y,rightHand.getPosition().z);
+		//printf("R(%5.2f,%5.2f,%5.2f)\n",rightHand.getPosition().x,rightHand.getPosition().y,rightHand.getPosition().z);
 	}
 }
 
@@ -167,6 +205,7 @@ bool NIEngine::Init()
 
 	nite::NiTE::initialize();
 	_pUserTracker = new nite::UserTracker();
+	_pHandTracker = new nite::HandTracker();
 
 	niteRc = _pUserTracker->create(&_device);
 	if (niteRc != nite::STATUS_OK)
@@ -174,6 +213,17 @@ bool NIEngine::Init()
 		printf("Failed to create user tracker.\n");
 		return false;
 	}
+
+	niteRc = _pHandTracker->create(&_device);
+	if (niteRc != nite::STATUS_OK)
+	{
+		printf("Failed to create hand tracker.\n");
+		return false;
+	}
+
+	_pHandTracker->startGestureDetection(nite::GESTURE_CLICK);
+
+	//_pHandTracker->setSmoothingFactor(0.1);
 
 	// Create a dedicated thread to handle the data
 	THREADSTRUCT* param = new THREADSTRUCT;
@@ -192,6 +242,7 @@ void NIEngine::Terminate()
 {
 	_isAlive = false; // Wait until the thread ends?
 
+	//delete _pHandTracker;
 	//delete _pUserTracker;
 	//nite::NiTE::shutdown();
 	//openni::OpenNI::shutdown();
