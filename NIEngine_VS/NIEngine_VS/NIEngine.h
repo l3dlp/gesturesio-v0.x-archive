@@ -5,7 +5,7 @@ class NIEngine
 {
 private:
 	const static int MAX_DISTANCE = 9999;
-	const static short INVALID_ID = -1;
+	const static short INVALID_ID = 0;
 	static NIEngine* _instance;
 	openni::Device _device;
 	nite::UserTracker* _pUserTracker;
@@ -28,6 +28,7 @@ private:
 	nite::UserId SelectActiveUser(const nite::Array<nite::UserData>& users);
 	void ManageTracker(const nite::Array<nite::UserData>& users, nite::UserId activeID);
 	void ReadSkeleton(const nite::UserData* pUser);
+	nite::UserId FindGestureOwner(const nite::Point3f& handPoint,int xDist, int yDist); // xDist/yDist - represents distance from current hand point's x/y
 };
 
 typedef struct  

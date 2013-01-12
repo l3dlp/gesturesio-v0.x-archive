@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "NIEngine.h"
 #include "tinythread.h"
 
@@ -85,30 +86,70 @@ void NIEngine::ProcessData()
 		{
 			if (gestures[i].isComplete())
 			{
-				nite::HandId handID;
-				_pHandTracker->startHandTracking(gestures[i].getCurrentPosition(),&handID);
-			}
-		}
-
-		const nite::Array<nite::HandData>& hands = handFrame.getHands();
-		for (int i = 0; i < hands.getSize(); ++i)
-		{
-			const nite::HandData& hand = hands[i];
-			if (hand.isTracking())
-			{
-				if (hand.isNew())
+				const nite::Point3f handPos = gestures[i].getCurrentPosition();
+				nite::UserId ownerID = FindGestureOwner(handPos,0,0); // Current test shows that we don't need the window so far.
+				//printf("Gesture detected. ID=%d %d\n",ownerID,activeID);
+				if (ownerID == activeID)
 				{
-					printf("New hand %d found.\n",hand.getId());
+					nite::GestureType gType = gestures[i].getType();
+					printf("Gesture detected userID %d %d\n",ownerID,gType);
 				}
-				//printf("Hand Position: %5.2f,%5.2f,%5.2f\n",hand.getPosition().x,hand.getPosition().y,hand.getPosition().z);
-			}
-			else
-			{
-				printf("Hand %d lost\n",hand.getId());
 			}
 		}
-
 	}
+}
+
+nite::UserId NIEngine::FindGestureOwner(const nite::Point3f& handPoint, int xDist, int yDist)
+{
+	nite::UserId foundID = INVALID_ID;
+	float handX;
+	float handY;
+
+	_pUserTracker->convertJointCoordinatesToDepth(handPoint.x,handPoint.y,handPoint.z,&handX,&handY);
+
+	nite::UserTrackerFrameRef userTrackerFrame;
+	nite::Status rc = _pUserTracker->readFrame(&userTrackerFrame);
+	if (rc == nite::STATUS_OK)
+	{
+		const nite::UserMap& userLabels = userTrackerFrame.getUserMap();
+		const nite::UserId* pLabels = userLabels.getPixels();
+		int rowSize = userLabels.getStride() / sizeof(nite::UserId);
+		// Define current hand point's surrounding window to look for user ID.
+		int startX = std::max((int)handX - xDist,0);
+		int endX = std::min((int)handX + xDist,userLabels.getWidth());
+		int startY = std::max((int)handY - yDist,0);
+		int endY = std::min((int)handY + yDist,userLabels.getHeight());
+		
+		bool hasMultiUsers = false;
+		nite::UserId prevID = INVALID_ID;
+
+		for (int y = startY; y <= endY; ++y)
+		{
+			for (int x = startX; x <= endX; ++x)
+			{
+				nite::UserId curID = pLabels[y * rowSize + x];
+				if ( curID > INVALID_ID )
+				{
+					foundID = curID;
+
+					if (curID != prevID && prevID > INVALID_ID)
+					{
+						hasMultiUsers = true;
+					}
+					prevID = curID;
+				}
+			}
+			pLabels += rowSize;
+		}
+
+		if (hasMultiUsers)
+		{
+			foundID = INVALID_ID; // Invalidate it if there are more than one users inside the window.
+		}
+		//printf("w %d h %d x %d y %d r %d\n",userLabels.getWidth(),userLabels.getHeight(),(int)handX,(int)handY,rowSize);
+	}
+
+	return foundID;
 }
 
 void NIEngine::ReadSkeleton(const nite::UserData* pUser)
@@ -222,7 +263,7 @@ bool NIEngine::Init()
 	}
 
 	_pHandTracker->startGestureDetection(nite::GESTURE_CLICK);
-
+	_pHandTracker->startGestureDetection(nite::GESTURE_WAVE);
 	//_pHandTracker->setSmoothingFactor(0.1);
 
 	// Create a dedicated thread to handle the data
