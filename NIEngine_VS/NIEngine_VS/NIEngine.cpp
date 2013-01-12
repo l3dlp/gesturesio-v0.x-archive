@@ -53,6 +53,7 @@ void NIEngine::ProcessData()
 			continue;
 		}
 
+		_latestTs = userTrackerFrame.getTimestamp();
 		const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
 
 		// NOTE: we can still read valid ID even when the user left, because NiTE will keep it
@@ -73,30 +74,37 @@ void NIEngine::ProcessData()
 			}
 		}
 
-		// Read hand gesture
+		// Read gesture
 		niteRc = _pHandTracker->readFrame(&handFrame);
 		if (niteRc != nite::STATUS_OK)
-		{
+		{	
 			printf("Failed to read next hand frame.\n");
 			continue;
 		}
-
-		const nite::Array<nite::GestureData>& gestures = handFrame.getGestures();
-		for (int i = 0; i < gestures.getSize(); ++i)
+		
+		if (activeID != INVALID_ID)
 		{
-			if (gestures[i].isComplete())
-			{
-				const nite::Point3f handPos = gestures[i].getCurrentPosition();
-				nite::UserId ownerID = FindGestureOwner(handPos,0,0); // Current test shows that we don't need the window so far.
-				//printf("Gesture detected. ID=%d %d\n",ownerID,activeID);
-				if (ownerID == activeID)
-				{
-					nite::GestureType gType = gestures[i].getType();
-					printf("Gesture detected userID %d %d\n",ownerID,gType);
-				}
-			}
+			ReadGestureByID(handFrame.getGestures(),activeID);
 		}
 	}
+}
+
+std::string NIEngine::GetNameFromGestureType(nite::GestureType type)
+{
+	std::string name = "";
+
+	switch(type)
+	{
+	case nite::GESTURE_CLICK:
+		name = "click";
+		break;
+	case nite::GESTURE_WAVE:
+		name = "wave";
+		break;
+	default:
+		break;
+	}
+	return name;
 }
 
 nite::UserId NIEngine::FindGestureOwner(const nite::Point3f& handPoint, int xDist, int yDist)
@@ -154,23 +162,33 @@ nite::UserId NIEngine::FindGestureOwner(const nite::Point3f& handPoint, int xDis
 
 void NIEngine::ReadSkeleton(const nite::UserData* pUser)
 {
-	float coordinates[4] = {0};
-
-	const nite::SkeletonJoint& leftHand = pUser->getSkeleton().getJoint(nite::JOINT_LEFT_HAND);
-	const nite::SkeletonJoint& rightHand = pUser->getSkeleton().getJoint(nite::JOINT_RIGHT_HAND);
-
-	// Convert to projective coordination
-	//_pUserTracker->convertJointCoordinatesToDepth(leftHand.getPosition().x,leftHand.getPosition().y,leftHand.getPosition().z,
-	//											&coordinates[0],&coordinates[1]);
-
-	// NOTE: use 0.5 as I'm not sure now if NiTE2 has new definition/improvement on the confidence.
-	if (leftHand.getPositionConfidence() >= 0.5f)
+	for (int i = 0; i < NUM_OF_SUPPORTED_JOINT; ++i)
 	{
-		//printf("L(%5.2f,%5.2f,%5.2f)\n",leftHand.getPosition().x,leftHand.getPosition().y,leftHand.getPosition().z);
+		if (_jointMap[i] == 1)
+		{
+			_joint[i] = pUser->getSkeleton().getJoint((nite::JointType)i);
+		}
 	}
-	if (rightHand.getPositionConfidence() >= 0.5f)
+}
+
+void NIEngine::ReadGestureByID(const nite::Array<nite::GestureData>& gestures, nite::UserId activeID)
+{
+	for (int i = 0; i < gestures.getSize(); ++i)
 	{
-		//printf("R(%5.2f,%5.2f,%5.2f)\n",rightHand.getPosition().x,rightHand.getPosition().y,rightHand.getPosition().z);
+		if (gestures[i].isComplete())
+		{
+			const nite::Point3f handPos = gestures[i].getCurrentPosition();
+			nite::UserId ownerID = FindGestureOwner(handPos,0,0); // Current test shows that we don't need the window so far.
+			//printf("Gesture detected. ID=%d %d\n",ownerID,activeID);
+			if (ownerID == activeID)
+			{
+				nite::GestureType gType = gestures[i].getType();
+				_gesture.name = GetNameFromGestureType(gType);
+				_gesture.timeStamp = _latestTs;
+
+				printf("Gesture detected userID %d %d\n",ownerID,gType);
+			}
+		}
 	}
 }
 
@@ -300,4 +318,76 @@ void NIEngine::Stop()
 {
 	_shouldRun = false;
 	printf("Stop reading.\n");
+}
+
+void NIEngine::SetProfile(NISkelProfile profile)
+{
+	// Reset mask
+	std::memset(_jointMap,0,sizeof(_jointMap));
+
+	switch(profile)
+	{
+	case SKEL_PROFILE_HANDS:
+		_jointMap[nite::JOINT_LEFT_HAND] = 1;
+		_jointMap[nite::JOINT_RIGHT_HAND] = 1;
+		break;
+	case SKEL_PROFILE_HANDS_AND_HEAD:
+		_jointMap[nite::JOINT_LEFT_HAND] = 1;
+		_jointMap[nite::JOINT_RIGHT_HAND] = 1;
+		_jointMap[nite::JOINT_HEAD] = 1;
+		break;
+	default:
+		break;
+	}
+}
+
+nite::Point3f NIEngine::GetLeftHandPos()
+{
+	nite::Point3f pos;
+	if (_jointMap[nite::JOINT_LEFT_HAND] == 1)
+	{
+		pos = _joint[nite::JOINT_LEFT_HAND].getPosition();
+	}
+	return pos;
+}
+
+nite::Point3f NIEngine::GetRightHandPos()
+{
+	nite::Point3f pos;
+	if (_jointMap[nite::JOINT_RIGHT_HAND] == 1)
+	{
+		pos = _joint[nite::JOINT_RIGHT_HAND].getPosition();
+	}
+	return pos;
+}
+
+nite::Point3f NIEngine::GetHeadPos()
+{
+	nite::Point3f pos;
+	if (_jointMap[nite::JOINT_HEAD] == 1)
+	{
+		pos = _joint[nite::JOINT_HEAD].getPosition();
+	}
+	return pos;
+}
+
+std::string NIEngine::GetGesture(bool leftHand)
+{
+	std::string gesture = "";
+	if ((double)(_latestTs - _gesture.timeStamp)/1000 <= GESTURE_EXPIRED_TIME)
+	{
+		gesture = _gesture.name;
+	}
+	return gesture;
+}
+
+nite::Point3f NIEngine::WorldToProjective(const nite::Point3f& orig)
+{
+	nite::Point3f pos;
+
+	if (_pUserTracker != NULL)
+	{
+		_pUserTracker->convertJointCoordinatesToDepth(orig.x,orig.y,orig.z,&pos.x,&pos.y);
+	}
+	return pos;
 }
