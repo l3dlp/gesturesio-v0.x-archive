@@ -116,8 +116,8 @@ void StartNIService()
         g_tcpServer->Start(SERVER_PORT);
 
         NIEngine::GetInstance()->SetProfile(SKEL_PROFILE_HANDS_AND_HEAD);
+        NIEngine::GetInstance()->Init();
         NIEngine::GetInstance()->Start();
-
         g_isRunning = true;
     }
 
@@ -132,7 +132,7 @@ void StopNIService()
         delete g_tcpServer;
         g_tcpServer = NULL;
 
-        NIEngine::GetInstance()->Stop();
+        NIEngine::GetInstance()->Terminate();
         HttpRequest(g_logOut.c_str());
 
         g_isRunning = false;

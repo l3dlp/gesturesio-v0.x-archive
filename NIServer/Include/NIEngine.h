@@ -1,20 +1,7 @@
-#include <XnCppWrapper.h>
+#include <string>
 #include <list>
-#include "OneEuroFilter.h"
-
-typedef struct 
-{
-	bool isRightHand;
-	std::string name;
-	float timeStamp;
-}GESTURERECORD;
-
-typedef struct
-{
-    XnPoint3D real;
-    XnPoint3D projective;
-
-}JointPosition;
+#include "OpenNI.h"
+#include "NiTE.h"
 
 typedef enum
 {
@@ -22,121 +9,62 @@ typedef enum
     SKEL_PROFILE_HANDS_AND_HEAD
 }NISkelProfile;
 
-//// 3D point filter
-// Using one euro filter, a simple speed-based Low-pass filter.
-// More info here: http://www.lifl.fr/~casiez/1euro/
-struct Point3DFilter
+typedef struct
 {
-	Point3DFilter(double _freq, double _mincutoff, double _beta, double _dcutoff): isEnabled(true)
-	{
-		filterX.setFreq(_freq);
-		filterX.setMincutoff(_mincutoff);
-		filterX.setBeta(_beta);
-		filterX.setDcutoff(_dcutoff);
-
-		filterY.setFreq(_freq);
-		filterY.setMincutoff(_mincutoff);
-		filterY.setBeta(_beta);
-		filterY.setDcutoff(_dcutoff);
-
-		filterZ.setFreq(_freq);
-		filterZ.setMincutoff(_mincutoff);
-		filterZ.setBeta(_beta);
-		filterZ.setDcutoff(_dcutoff);
-	}
-
-private:
-	one_euro_filter<> filterX;
-	one_euro_filter<> filterY;
-	one_euro_filter<> filterZ;
-	bool isEnabled;
-
-public:
-	XnPoint3D filter(XnPoint3D point, double timeStamp)
-	{
-		XnPoint3D filteredPoint;
-		
-		if (isEnabled == true)
-		{
-			filteredPoint.X = filterX(point.X,timeStamp);
-			filteredPoint.Y = filterY(point.Y,timeStamp);
-			filteredPoint.Z = filterZ(point.Z,timeStamp);
-		}
-		else
-		{
-			filteredPoint = point;
-			printf("filter disabled! \n");
-		}
-
-		return filteredPoint;
-	}
-
-	void enable(bool enabled)
-	{
-		isEnabled = enabled;
-	}
-};
+    std::string name;
+    uint64_t timeStamp;
+}GestureInfo;
 
 class NIEngine
 {
 private:
-    static const int JOINTS_SUPPORTED = 25; // OpenNI supports 24 joints, but the joints enumator starts from 1, so we add 1.
-	static NIEngine* _instance;
-	xn::Context _niContext;
-	xn::ScriptNode _niScriptNode;
-	xn::DepthGenerator _depthGenerator;
-	xn::UserGenerator _userGenerator;
-	xn::GestureGenerator _gestureGenerator;
-	XnBool _shouldStop;
-	XnBool _running;
-    JointPosition _joints[JOINTS_SUPPORTED];
-    int _jointsMask[JOINTS_SUPPORTED];
-    Point3DFilter* _filters[JOINTS_SUPPORTED];
-	XnSkeletonJointPosition _leftHand;
-	XnSkeletonJointPosition _rightHand;
-	XnSkeletonJointPosition _headPos;
-	XnSkeletonJointOrientation _headOrient;
-	XnPoint3D _leftHandPosProjective;
-	XnPoint3D _rightHandPosProjective;
-	XnPoint3D _headPosProjective;
-	std::list<GESTURERECORD> _gestures;
+    const static int MAX_DISTANCE = 9999;
+    const static short INVALID_ID = 0;
+    const static int NUM_OF_SUPPORTED_JOINT = nite::JOINT_RIGHT_FOOT + 1;// in NiTE2, JOINT_RIGHT_FOOT is the last joint, starting from 0.
+    const static int GESTURE_EXPIRED_TIME = 1; // ms
+    static NIEngine* _instance;
+    openni::Device _device;
+    nite::UserTracker* _pUserTracker;
+    nite::HandTracker* _pHandTracker;
+    bool _isAlive;
+    bool _shouldRun;
+    int _jointMap[NUM_OF_SUPPORTED_JOINT];
+    nite::SkeletonJoint _joint[NUM_OF_SUPPORTED_JOINT];
+    nite::Point3f _projJoint[NUM_OF_SUPPORTED_JOINT]; // Projective joints
+    std::list<GestureInfo> _gestures;
+    uint64_t _latestTs;
 
 public:
-	static NIEngine* GetInstance();
-	XnBool Start();
-	XnBool Stop();
-	void NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie);
-	void LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie);
-	void CalibrationCompleted(xn::SkeletonCapability& capability, XnUserID nId, XnCalibrationStatus eStatus, void* pCookie);
-	void GestureRecognized(xn::GestureGenerator& generator,
-							const XnChar* strGesture, 
-							const XnPoint3D* pIDPosition,
-							const XnPoint3D* pEndPosition, void* pCookie);
-
-	float PointDist(const XnPoint3D* p1, const XnPoint3D* p2);
-
-	~NIEngine();
-	XnBool IsRunning();
+    static NIEngine* GetInstance();
+    ~NIEngine();
+    bool Init();
+    void Terminate();
+    void Start();
+    void Stop();
     void SetProfile(NISkelProfile profile);
-    XnPoint3D GetLeftHandPos();
-    XnPoint3D GetRightHandPos();
-	XnPoint3D GetLeftHandPosProjective();
-	XnPoint3D GetRightHandPosProjective();
-	XnPoint3D GetHeadPosProjective();
-	GESTURERECORD GetGesture();
+    nite::Point3f GetLeftHandPos();
+    nite::Point3f GetRightHandPos();
+    nite::Point3f GetLeftHandPosProjective();
+    nite::Point3f GetRightHandPosProjective();
+    nite::Point3f GetHeadPosProjective();
+    nite::Point3f GetHeadPos();
+    std::string GetGesture();
 
 private:
-	NIEngine();
-	XnBool FileExists(const char *fn);
-	static void StartThread(void* arg);
-	void ProcessData();
-    void ReadJoints(XnUserID userID);
-    void ConstructFilters();
-    void DestructFilters();
+    NIEngine();
+    static void StartThread(void* arg);
+    void ProcessData();
+    nite::UserId SelectActiveUser(const nite::Array<nite::UserData>& users);
+    void ManageTracker(const nite::Array<nite::UserData>& users, nite::UserId activeID);
+    void ReadSkeleton(const nite::UserData* pUser);
+    void ReadGestureByID(const nite::Array<nite::GestureData>& gestures, nite::UserId activeID);
+    nite::UserId FindGestureOwner(const nite::Point3f& handPoint,int xDist, int yDist); // xDist/yDist - represents distance from current hand point's x/y
+    std::string GetNameFromGestureType(nite::GestureType type);
+    nite::Point3f WorldToProjective(const nite::Point3f& orig);
 };
 
-typedef struct  
+typedef struct
 {
-	NIEngine* _this;
+    NIEngine* _this;
 
 }THREADSTRUCT;

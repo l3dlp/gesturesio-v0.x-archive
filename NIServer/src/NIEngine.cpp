@@ -1,418 +1,437 @@
+#include <algorithm>
 #include "NIEngine.h"
-#include <math.h>
-#include "TinyThread/tinythread.h"
-#include "Utils.h"
+#include "tinyThread/tinythread.h"
 
-using namespace tthread;
-
-#define OPENNI_CONFIG_PATH "./Data/openni.xml"  // cp-concern
-#define MAX_NUM_USERS 15
-
-#define GESTURE_DIST_THRSH	100    // The threshold of distance between gesture detected hand position and given hand position
-
-NIEngine* NIEngine::_instance = NULL;
-
-#define CHECK_RC(retVal, what)					    \
-	if (retVal != XN_STATUS_OK)				    \
-{								    \
-	printf("%s failed: %s\n", what, xnGetStatusString(retVal));    \
-	return retVal;						    \
-}
-
-void XN_CALLBACK_TYPE Gesture_Recognized(xn::GestureGenerator& generator,const XnChar* strGesture, 
-										const XnPoint3D* pIDPosition,const XnPoint3D* pEndPosition, void* pCookie)
-{
-	NIEngine::GetInstance()->GestureRecognized(generator,strGesture,pIDPosition,pEndPosition,pCookie);
-}
-
-void XN_CALLBACK_TYPE Gesture_Progress(xn::GestureGenerator& generator,const XnChar* strGesture, 
-									   const XnPoint3D* pPosition, XnFloat fProgress, void* pCookie)
-{
-	
-}
-
-void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
-{
-	NIEngine::GetInstance()->NewUser(generator,nId,pCookie);
-}
-
-void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
-{
-	NIEngine::GetInstance()->LostUser(generator,nId,pCookie);
-}
-
-void XN_CALLBACK_TYPE UserCalibration_CalibrationComplete(xn::SkeletonCapability& capability, XnUserID nId, XnCalibrationStatus eStatus, void* pCookie)
-{
-	NIEngine::GetInstance()->CalibrationCompleted(capability,nId,eStatus,pCookie);
-}
+NIEngine* NIEngine::_instance = 0;
 
 NIEngine::NIEngine()
 {
-	_running = FALSE;
 
-	memset(&_leftHand,0,sizeof(_leftHand));
-	memset(&_rightHand,0,sizeof(_rightHand));
-	memset(&_leftHandPosProjective,0,sizeof(_leftHandPosProjective));
-	memset(&_rightHandPosProjective,0,sizeof(_rightHandPosProjective));
-	memset(&_headPosProjective,0,sizeof(_headPosProjective));
+}
+
+NIEngine::~NIEngine()
+{
+
 }
 
 NIEngine* NIEngine::GetInstance()
 {
-	if (_instance == NULL)
-	{
-		_instance = new NIEngine();
-	}
-	return _instance;
-}
-
-XnBool NIEngine::IsRunning()
-{
-	return _running;
-}
-
-XnBool NIEngine::Start()
-{
-	XnStatus retVal = XN_STATUS_OK;
-	xn::EnumerationErrors errors;
-
-	// cp-concern: TRUE
-	if (FileExists(OPENNI_CONFIG_PATH) != TRUE)
-	{
-		printf("Could not find OpenNI configuration file from %s\n",OPENNI_CONFIG_PATH);
-		return false;
-	}
-
-	Logger::GetInstance()->Log("Starting NIEngine...");
-
-	retVal = _niContext.InitFromXmlFile(OPENNI_CONFIG_PATH,_niScriptNode,&errors);
-	if (retVal == XN_STATUS_NO_NODE_PRESENT)
-	{
-		XnChar strError[1024];
-		errors.ToString(strError, 1024);
-		printf("%s\n", strError);
-		return (retVal);
-	}
-	else if (retVal != XN_STATUS_OK)
-	{
-		printf("Open failed: %s\n", xnGetStatusString(retVal));
-		return (retVal);
-	}
-
-	retVal = _niContext.FindExistingNode(XN_NODE_TYPE_DEPTH,_depthGenerator);
-	CHECK_RC(retVal,"No depth generator");
-
-	retVal = _niContext.FindExistingNode(XN_NODE_TYPE_USER,_userGenerator);
-	CHECK_RC(retVal,"No user generator");
-
-	retVal = _niContext.FindExistingNode(XN_NODE_TYPE_GESTURE,_gestureGenerator);
-	CHECK_RC(retVal,"No gesture generator");
-
-	if (_userGenerator.IsCapabilitySupported(XN_CAPABILITY_SKELETON) != TRUE)
-	{
-		printf("Supplied user generator doesn't support skeleton\n");
-		return FALSE;
-	}
-
-	XnCallbackHandle hGesture, hUserCallbacks, hCalibrationStart, hCalibrationComplete, hPoseDetected;
-
-	retVal = _gestureGenerator.RegisterGestureCallbacks(Gesture_Recognized,Gesture_Progress,NULL,hGesture);
-	CHECK_RC(retVal,"Register to gesture callbacks");
-
-	retVal = _userGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks);
-	CHECK_RC(retVal, "Register to user callbacks");
-
-	retVal = _userGenerator.GetSkeletonCap().RegisterToCalibrationComplete(UserCalibration_CalibrationComplete, NULL, hCalibrationComplete);
-	CHECK_RC(retVal, "Register to calibration complete");
-
-	_userGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_UPPER);
-	_userGenerator.GetSkeletonCap().SetSmoothing(0.5); // Set global smoothing factor. This will affect all joints. 0.5 is the default value.
-	retVal = _niContext.StartGeneratingAll();
-	CHECK_RC(retVal,"StartGenerating");
-
-	_gestureGenerator.AddGesture("Click",NULL);
-	//_gestureGenerator.AddGesture("Wave",NULL);
-
-	THREADSTRUCT* param = new THREADSTRUCT;
-	param->_this = this;
-    // TinyThread++, a portable thread implementation is used.
-    // More info here: http://tinythreadpp.bitsnbites.eu/
-	thread niThread(StartThread,param);
-	//niThread.join();
-	niThread.detach();
-
-	Logger::GetInstance()->Log("NIEngine Started.");
-	return true;
-}
-
-float NIEngine::PointDist(const XnPoint3D* p1, const XnPoint3D* p2)
-{
-	return sqrt(pow(p1->X - p2->X,2) + pow(p1->Y - p2->Y,2) + pow(p1->Z - p2->Z,2));
-}
-
-void NIEngine::GestureRecognized(xn::GestureGenerator& generator,const XnChar* strGesture, 
-								 const XnPoint3D* pIDPosition,const XnPoint3D* pEndPosition, void* pCookie)
-{
-	// Identify which hand holds this gesture
-	float leftDist = PointDist(&_leftHand.position,pEndPosition);
-	float rightDist = PointDist(&_rightHand.position,pEndPosition);
-
-	GESTURERECORD gestureRec;
-	gestureRec.name = strGesture;
-	gestureRec.timeStamp = 0; //TODO: add current timestamp
-
-	if (rightDist < GESTURE_DIST_THRSH)
-	{
-		gestureRec.isRightHand = true;
-	}
-	else if (leftDist < GESTURE_DIST_THRSH)
-	{
-		gestureRec.isRightHand = false;
-	}
-	else
-	{
-		gestureRec.timeStamp = -1.0f; //invalid
-	}
-
-	if (gestureRec.timeStamp >= 0)
-	{
-        Logger::GetInstance()->Log("hand gesture detected.");
-		_gestures.push_back(gestureRec);
-	}
-
-	//printf("idp %f %f %f\n",pIDPosition->X,pIDPosition->Y,pIDPosition->Z);
-	//printf("enp %f %f %f\n",pEndPosition->X,pEndPosition->Y,pEndPosition->Z);
-	//printf("rh %f %f %f\n",_rightHand.position.X,_rightHand.position.Y,_rightHand.position.Z);
-	//printf("pos dis %f\n",PointDist(pIDPosition,pEndPosition));
-	//printf("Gesture %s detected ld %f rd %f\n",strGesture,leftDist,rightDist);
-	
-}
-
-void NIEngine::NewUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
-{
-	printf("User %d found \n",nId);
-	_userGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
-}
-
-void NIEngine::LostUser(xn::UserGenerator& generator, XnUserID nId, void* pCookie)
-{
-	printf("User %d lost \n",nId);
-}
-
-void NIEngine::CalibrationCompleted(xn::SkeletonCapability& capability, XnUserID nId, XnCalibrationStatus eStatus, void* pCookie)
-{
-	if (eStatus == XN_CALIBRATION_STATUS_OK)
-	{
-		printf("User %d calibrated.\n",nId);
-		// Calibration succeeded
-		_userGenerator.GetSkeletonCap().StartTracking(nId);
-	}
-}
-
-void NIEngine::ConstructFilters()
-{
-    double frequency = 30; // 30FPS by default
-    double mincutoff = 1;  // min cutoff frequency
-    double beta = 0.05;     // cutoff slope
-    double dcutoff = 1;    // cutoff frequency for derivate
-
-    // Construct filters
-    for(int i = 1; i < JOINTS_SUPPORTED; i++)
+    if (_instance == 0)
     {
-        _filters[i] = new Point3DFilter(frequency,mincutoff,beta,dcutoff);
+        _instance = new NIEngine();
     }
+    return _instance;
 }
 
-void NIEngine::DestructFilters()
+void NIEngine::StartThread(void* arg)
 {
-    for(int i = 1; i < JOINTS_SUPPORTED; i++)
-    {
-        if(_filters[i] != NULL)
-        {
-            delete _filters[i];
-            _filters[i] = NULL;
-        }
-    }
+    THREADSTRUCT* ts = (THREADSTRUCT*)arg;
+    ts->_this->ProcessData();
 }
 
 void NIEngine::ProcessData()
 {
-	_shouldStop = FALSE;
-	_running = TRUE;
-	XnUInt16 numOfUsers;
-	XnUserID users[MAX_NUM_USERS];
-	
-    double lastTs = 0;  // last time stamp
+    nite::UserTrackerFrameRef userTrackerFrame;
+    nite::HandTrackerFrameRef handFrame;
+    _isAlive = true;
+    _shouldRun = true;
 
-    ConstructFilters();
+    printf("NIEngine running...\n");
 
-	while (_shouldStop == FALSE)
-	{
-		_niContext.WaitOneUpdateAll(_userGenerator);
-		numOfUsers = MAX_NUM_USERS;
+    while (_isAlive)
+    {
+        if (_shouldRun == false)
+        {
+            continue;
+        }
 
-		_userGenerator.GetUsers(users, numOfUsers);
+        nite::Status niteRc = _pUserTracker->readFrame(&userTrackerFrame);
 
-		// simple user selection - choose the closest one
-		XnUserID closestUserID = 0;  
-		float smallestDist = 99999; // Math::Maxfloat?
-		for(XnUInt16 i = 0; i < numOfUsers; i++)
-		{
-			if(_userGenerator.GetSkeletonCap().IsTracking(users[i]) == FALSE)
-				continue;
+        if (niteRc != nite::STATUS_OK)
+        {
+            printf("Read next user tracker frame failed.\n");
+            continue;
+        }
 
-			XnPoint3D com;
-			_userGenerator.GetCoM(users[i],com);
-			float dist = sqrtf(com.Z * com.Z + com.X * com.X); // calc distance in x-z plane
-			if (dist < smallestDist)
-			{
-				smallestDist = dist;
-				closestUserID = users[i];
-			}
-		}
+        _latestTs = userTrackerFrame.getTimestamp();
+        const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
 
-		// Valid user ID starts from 1
-		if(closestUserID > 0)
-		{
-            double currentTs = (double)_userGenerator.GetTimestamp() / 1000000;
+        // NOTE: we can still read valid ID even when the user left, because NiTE will keep it
+        // for a certain time to allow user come back before really drop the ID.
+        // So keep it in mind in case we need to handle it - stop reading skeleton data immediately once user left.
+        nite::UserId activeID = SelectActiveUser(users);
 
-            // Monitor frame dropping
-            if (currentTs - lastTs > 0.034)
+        if (activeID != INVALID_ID)
+        {
+            // The tracker manager will make sure we track one user only, to save bandwidth.
+            ManageTracker(users, activeID);
+
+            // Read data from active user
+            const nite::UserData* pUser = userTrackerFrame.getUserById(activeID);
+            if (pUser->getSkeleton().getState() == nite::SKELETON_TRACKED)
             {
-                printf("%d frames dropped!\n",(int)abs(currentTs-lastTs / 0.033));
+                ReadSkeleton(pUser);
             }
-            lastTs = currentTs;
+        }
 
-            XnUserID curUserID = closestUserID;
-            ReadJoints(curUserID);
-		}
-	}
+        // Read gesture
+        niteRc = _pHandTracker->readFrame(&handFrame);
+        if (niteRc != nite::STATUS_OK)
+        {
+            printf("Failed to read next hand frame.\n");
+            continue;
+        }
 
-    DestructFilters();
+        if (activeID != INVALID_ID)
+        {
+            ReadGestureByID(handFrame.getGestures(),activeID);
+        }
+    }
+}
 
-	_running = FALSE;
+std::string NIEngine::GetNameFromGestureType(nite::GestureType type)
+{
+    std::string name = "";
+
+    switch(type)
+    {
+    case nite::GESTURE_CLICK:
+        name = "click";
+        break;
+    case nite::GESTURE_WAVE:
+        name = "wave";
+        break;
+    default:
+        break;
+    }
+    return name;
+}
+
+nite::UserId NIEngine::FindGestureOwner(const nite::Point3f& handPoint, int xDist, int yDist)
+{
+    nite::UserId foundID = INVALID_ID;
+    float handX;
+    float handY;
+
+    _pUserTracker->convertJointCoordinatesToDepth(handPoint.x,handPoint.y,handPoint.z,&handX,&handY);
+
+    nite::UserTrackerFrameRef userTrackerFrame;
+    nite::Status rc = _pUserTracker->readFrame(&userTrackerFrame);
+    if (rc == nite::STATUS_OK)
+    {
+        const nite::UserMap& userLabels = userTrackerFrame.getUserMap();
+        const nite::UserId* pLabels = userLabels.getPixels();
+        int rowSize = userLabels.getStride() / sizeof(nite::UserId);
+        // Define current hand point's surrounding window to look for user ID.
+        int startX = (std::max)((int)handX - xDist,0);
+        int endX = (std::min)((int)handX + xDist,userLabels.getWidth());
+        int startY = (std::max)((int)handY - yDist,0);
+        int endY = (std::min)((int)handY + yDist,userLabels.getHeight());
+
+        bool hasMultiUsers = false;
+        nite::UserId prevID = INVALID_ID;
+
+        for (int y = startY; y <= endY; ++y)
+        {
+            for (int x = startX; x <= endX; ++x)
+            {
+                nite::UserId curID = pLabels[y * rowSize + x];
+                if ( curID > INVALID_ID )
+                {
+                    foundID = curID;
+
+                    if (curID != prevID && prevID > INVALID_ID)
+                    {
+                        hasMultiUsers = true;
+                    }
+                    prevID = curID;
+                }
+            }
+            pLabels += rowSize;
+        }
+
+        if (hasMultiUsers)
+        {
+            foundID = INVALID_ID; // Invalidate it if there are more than one users inside the window.
+        }
+        //printf("w %d h %d x %d y %d r %d\n",userLabels.getWidth(),userLabels.getHeight(),(int)handX,(int)handY,rowSize);
+    }
+
+    return foundID;
+}
+
+void NIEngine::ReadSkeleton(const nite::UserData* pUser)
+{
+    for (int i = 0; i < NUM_OF_SUPPORTED_JOINT; ++i)
+    {
+        if (_jointMap[i] == 1)
+        {
+            _joint[i] = pUser->getSkeleton().getJoint((nite::JointType)i);
+            _projJoint[i] = WorldToProjective(_joint[i].getPosition());
+        }
+    }
+}
+
+void NIEngine::ReadGestureByID(const nite::Array<nite::GestureData>& gestures, nite::UserId activeID)
+{
+    for (int i = 0; i < gestures.getSize(); ++i)
+    {
+        if (gestures[i].isComplete())
+        {
+            const nite::Point3f handPos = gestures[i].getCurrentPosition();
+            nite::UserId ownerID = FindGestureOwner(handPos,0,0); // Current test shows that we don't need the window so far.
+            //printf("Gesture detected. ID=%d %d\n",ownerID,activeID);
+            if (ownerID == activeID)
+            {
+                GestureInfo tmpGesture;
+
+                nite::GestureType gType = gestures[i].getType();
+                tmpGesture.name = GetNameFromGestureType(gType);
+                tmpGesture.timeStamp = _latestTs;
+
+                _gestures.push_back(tmpGesture);
+                printf("Gesture detected ID %d type %d\n",ownerID,gType);
+            }
+        }
+    }
+}
+
+void NIEngine::ManageTracker(const nite::Array<nite::UserData>& users, nite::UserId activeID)
+{
+    for (int i = 0; i < users.getSize(); ++i)
+    {
+        const nite::UserData& user = users[i];
+        nite::UserId id = user.getId();
+        nite::SkeletonState stat = user.getSkeleton().getState();
+
+        if (id == activeID)
+        {
+            if(stat != nite::SKELETON_TRACKED)
+            {
+                _pUserTracker->startSkeletonTracking(id);
+            }
+        }
+        else
+        {
+            if (stat == nite::SKELETON_TRACKED)
+            {
+                _pUserTracker->stopSkeletonTracking(id);
+            }
+        }
+    }
+}
+
+// Select active user from users in FOV
+// Current algorithm is to pick up the closest user.
+nite::UserId NIEngine::SelectActiveUser(const nite::Array<nite::UserData>& users)
+{
+    float closestDist = MAX_DISTANCE;
+    nite::UserId activeID = INVALID_ID;
+
+    for (int i = 0; i < users.getSize(); ++i)
+    {
+        const nite::UserData& user = users[i];
+        nite::UserId id = user.getId();
+
+        const nite::Point3f& com = user.getCenterOfMass(); // Calculate distance from COM.
+        float dist = sqrtf(pow(com.x,2)+pow(com.y,2)+pow(com.z,2));
+
+        if (dist < closestDist)
+        {
+            closestDist = dist;
+            activeID = id;
+        }
+    }
+
+    return activeID;
+}
+
+bool NIEngine::Init()
+{
+    openni::Status niRc;
+    nite::Status niteRc;
+
+    niRc = openni::OpenNI::initialize();
+    if (niRc != openni::STATUS_OK)
+    {
+        printf("Failed to initialize OpenNI.\n %s\n",openni::OpenNI::getExtendedError());
+        return false;
+    }
+
+    const char* deviceUri = openni::ANY_DEVICE;
+    niRc = _device.open(deviceUri);
+    if (niRc != openni::STATUS_OK)
+    {
+        printf("Failed to open device.\n%s\n", openni::OpenNI::getExtendedError());
+        return false;
+    }
+
+    nite::NiTE::initialize();
+    _pUserTracker = new nite::UserTracker();
+    _pHandTracker = new nite::HandTracker();
+
+    niteRc = _pUserTracker->create(&_device);
+    if (niteRc != nite::STATUS_OK)
+    {
+        printf("Failed to create user tracker.\n");
+        return false;
+    }
+
+    niteRc = _pHandTracker->create(&_device);
+    if (niteRc != nite::STATUS_OK)
+    {
+        printf("Failed to create hand tracker.\n");
+        return false;
+    }
+
+    _pHandTracker->startGestureDetection(nite::GESTURE_CLICK);
+    _pHandTracker->startGestureDetection(nite::GESTURE_WAVE);
+    //_pHandTracker->setSmoothingFactor(0.1);
+
+    // Create a dedicated thread to handle the data
+    THREADSTRUCT* param = new THREADSTRUCT;
+    param->_this = this;
+    // TinyThread++, a portable thread implementation is used.
+    // More info here: http://tinythreadpp.bitsnbites.eu/
+    tthread::thread niThread(StartThread,param);
+    //niThread.join();
+    niThread.detach();
+
+    printf("NIEngine initialized successfully.\n");
+    return true;
+}
+
+void NIEngine::Terminate()
+{
+    _isAlive = false; // Wait until the thread ends?
+
+    //delete _pHandTracker;
+    //delete _pUserTracker;
+    //nite::NiTE::shutdown();
+    //openni::OpenNI::shutdown();
+    printf("NIEngine terminated.\n");
+}
+
+void NIEngine::Start()
+{
+    _shouldRun = true;
+    printf("Start reading.\n");
+}
+
+void NIEngine::Stop()
+{
+    _shouldRun = false;
+    printf("Stop reading.\n");
 }
 
 void NIEngine::SetProfile(NISkelProfile profile)
 {
     // Reset mask
-    for(int i = 1; i < JOINTS_SUPPORTED; i++)
-    {
-        _jointsMask[i] = 0;
-    }
+    std::memset(_jointMap,0,sizeof(_jointMap));
 
     switch(profile)
     {
     case SKEL_PROFILE_HANDS:
-        _jointsMask[XN_SKEL_LEFT_HAND] = 1;
-        _jointsMask[XN_SKEL_RIGHT_HAND] = 1;
+        _jointMap[nite::JOINT_LEFT_HAND] = 1;
+        _jointMap[nite::JOINT_RIGHT_HAND] = 1;
         break;
     case SKEL_PROFILE_HANDS_AND_HEAD:
-        _jointsMask[XN_SKEL_LEFT_HAND] = 1;
-        _jointsMask[XN_SKEL_RIGHT_HAND] = 1;
-        _jointsMask[XN_SKEL_HEAD] = 1;
+        _jointMap[nite::JOINT_LEFT_HAND] = 1;
+        _jointMap[nite::JOINT_RIGHT_HAND] = 1;
+        _jointMap[nite::JOINT_HEAD] = 1;
         break;
     default:
         break;
     }
 }
 
-void NIEngine::ReadJoints(XnUserID userID)
+nite::Point3f NIEngine::GetLeftHandPos()
 {
-    XnSkeletonJointPosition tmpPos;
-    XnPoint3D filteredTmpPos;
-    XnPoint3D tmpPosProjective;
-
-    double currentTs = (double)_userGenerator.GetTimestamp() / 1000000;
-
-    for(int i = 1; i < JOINTS_SUPPORTED; i++)
+    nite::Point3f pos;
+    if (_jointMap[nite::JOINT_LEFT_HAND] == 1)
     {
-        if(_jointsMask[i] == 1)
-        {
-            _userGenerator.GetSkeletonCap().GetSkeletonJointPosition(userID,(XnSkeletonJoint)i,tmpPos);
-            if (tmpPos.fConfidence > 0.5)
-            {
-                filteredTmpPos = _filters[i]->filter(tmpPos.position,currentTs);
-
-                _depthGenerator.ConvertRealWorldToProjective(1,&filteredTmpPos,&tmpPosProjective);
-                _joints[i].real = filteredTmpPos;
-                _joints[i].projective = tmpPosProjective;
-            }
-        }
+        pos = _joint[nite::JOINT_LEFT_HAND].getPosition();
     }
+    return pos;
 }
 
-void NIEngine::StartThread(void* arg)
+nite::Point3f NIEngine::GetLeftHandPosProjective()
 {
-	THREADSTRUCT* ts = (THREADSTRUCT*)arg;
-	ts->_this->ProcessData();
+    nite::Point3f pos;
+    if (_jointMap[nite::JOINT_LEFT_HAND] == 1)
+    {
+        pos = _projJoint[nite::JOINT_LEFT_HAND];
+    }
+    return pos;
 }
 
-XnBool NIEngine::Stop()
+nite::Point3f NIEngine::GetRightHandPos()
 {
-	if (_running == FALSE)
-	{
-		return TRUE;
-	}
-	
-	_shouldStop = TRUE;
-
-	Logger::GetInstance()->Log("Stopping NIEngine...");
-	// TODO: find proper way to release the resource and destruct the instance.
-
-	//_niContext.StopGeneratingAll();
-
-	//_niScriptNode.Release();
-	//_depthGenerator.Release();
-	//_userGenerator.Release();
-	//_niContext.Release();
-
-	return true;
+    nite::Point3f pos;
+    if (_jointMap[nite::JOINT_RIGHT_HAND] == 1)
+    {
+        pos = _joint[nite::JOINT_RIGHT_HAND].getPosition();
+    }
+    return pos;
 }
 
-// Helper functions
-XnBool NIEngine::FileExists(const char *fn)
+nite::Point3f NIEngine::GetRightHandPosProjective()
 {
-	XnBool exists;
-	xnOSDoesFileExist(fn, &exists);
-	return exists;
+    nite::Point3f pos;
+    if (_jointMap[nite::JOINT_RIGHT_HAND] == 1)
+    {
+        pos = _projJoint[nite::JOINT_RIGHT_HAND];
+    }
+    return pos;
 }
 
-XnPoint3D NIEngine::GetLeftHandPos()
+nite::Point3f NIEngine::GetHeadPos()
 {
-    return _joints[XN_SKEL_LEFT_HAND].real;
+    nite::Point3f pos;
+    if (_jointMap[nite::JOINT_HEAD] == 1)
+    {
+        pos = _joint[nite::JOINT_HEAD].getPosition();
+    }
+    return pos;
 }
 
-XnPoint3D NIEngine::GetRightHandPos()
+nite::Point3f NIEngine::GetHeadPosProjective()
 {
-    return _joints[XN_SKEL_RIGHT_HAND].real;
+    nite::Point3f pos;
+    if (_jointMap[nite::JOINT_HEAD] == 1)
+    {
+        pos = _projJoint[nite::JOINT_HEAD];
+    }
+    return pos;
 }
 
-XnPoint3D NIEngine::GetLeftHandPosProjective()
+std::string NIEngine::GetGesture()
 {
-    return _joints[XN_SKEL_LEFT_HAND].projective;
+    std::string gesture = "NONE";
+
+    if(_gestures.empty() == false)
+    {
+        GestureInfo tmpGesture = _gestures.back();
+        _gestures.pop_back();
+        double timeDiff = (double)(_latestTs - tmpGesture.timeStamp)/1000;
+
+        if ( timeDiff <= GESTURE_EXPIRED_TIME)
+        {
+            gesture = tmpGesture.name;
+        }
+        printf("td %f gesture %s\n",timeDiff,gesture.c_str());
+    }
+
+    return gesture;
 }
 
-XnPoint3D NIEngine::GetRightHandPosProjective()
+nite::Point3f NIEngine::WorldToProjective(const nite::Point3f& orig)
 {
-    return _joints[XN_SKEL_RIGHT_HAND].projective;
-}
+    nite::Point3f pos;
 
-XnPoint3D NIEngine::GetHeadPosProjective()
-{
-    return _joints[XN_SKEL_HEAD].projective;
-}
-
-GESTURERECORD NIEngine::GetGesture()
-{
-    GESTURERECORD gestureRec;
-    gestureRec.name = ""; // Empty name indicates that gesture is invalid.
-
-	if (_gestures.empty() == false)
-	{
-		gestureRec = _gestures.back();
-		_gestures.pop_back();
-	}
-
-	return gestureRec;
+    if (_pUserTracker != NULL)
+    {
+        _pUserTracker->convertJointCoordinatesToDepth(orig.x,orig.y,orig.z,&pos.x,&pos.y);
+    }
+    return pos;
 }

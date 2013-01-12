@@ -31,8 +31,7 @@ float headPosX = 0;
 float headPosY = 0;
 float headPosZ = 0;
 
-std::string leftGesture = "NONE";
-std::string rightGesture = "NONE";
+std::string gesture;
 
 // Colors for the points
 float Colors[][3] =
@@ -100,6 +99,7 @@ bool Query()
 		{
 			niSocket.Receive(MAX_PACKET-1);
 			memcpy(&data,niSocket.GetData(),MAX_PACKET-1);
+			gesture.clear();
 			//printf("echo: %d %s\n",niSocket.GetBytesReceived(),data);
 
 			// parse the data according to the format we ask
@@ -136,12 +136,11 @@ bool Query()
 				it++;
 				headPosZ = atof((*it).c_str());
 				it++;
-				leftGesture = *it;
-				it++;
-				rightGesture = *it;
-				if (rightGesture.compare("NONE") != 0)
+				gesture = (*it).c_str();
+
+				if (gesture.empty() == false)
 				{
-					printf("%s %s\n",leftGesture.c_str(),rightGesture.c_str());
+					printf("%s\n",gesture);
 				}
 				
 			}
@@ -289,8 +288,8 @@ void glutDisplay (void)
 	int rightHandColor = 7; // red
 	
 	// Draw a white square as the background for jitter tracking
-	DrawPoint(200, 150, 100, 6);
-	DrawPoint(500, 150, 100, 6);
+	DrawPoint(350, 150, 100, 6);
+	//DrawPoint(500, 150, 100, 6);
 
 	// Draw head point
 	float hx = headPosX / CROPBOX_WIDTH * GL_WIN_SIZE_X;
@@ -303,14 +302,14 @@ void glutDisplay (void)
 	DrawPoint(rx,ry,20,rightHandColor);
 
 	// Draw indication of gesture event
-	//if (leftGesture.compare("NONE") != 0)
-	//{
-	//	DrawPoint(lx,ly,50,3);
-	//}
-	//if (rightGesture.compare("NONE") != 0)
-	//{
-	//	DrawPoint(rx,ry,50,3);
-	//}
+	if (gesture == "click")
+	{
+		DrawPoint(500,150,50,3);
+	}
+	else if (gesture == "wave")
+	{
+		DrawPoint(200,150,50,3);
+	}
 
 #endif
 
