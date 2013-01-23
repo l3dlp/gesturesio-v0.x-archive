@@ -29,12 +29,40 @@ void NIEngine::StartThread(void* arg)
     ts->_this->ProcessData();
 }
 
+void NIEngine::ConstructFilters()
+{
+	double frequency = 30;   // 30FPS by default
+	double mincutoff = 1;    // min cutoff frequency
+	double beta = 0.05;      // cutoff slope
+	double dcutoff = 1;      // cutoff frequency for derivate
+
+	// Construct filters
+	for(int i = 0; i < NUM_OF_SUPPORTED_JOINT; i++)
+	{
+		_filters[i] = new Point3DFilter(frequency,mincutoff,beta,dcutoff);
+	}
+}
+
+void NIEngine::DestructFilters()
+{
+	for(int i = 0; i < NUM_OF_SUPPORTED_JOINT; i++)
+	{
+		if(_filters[i] != NULL)
+		{
+			delete _filters[i];
+			_filters[i] = NULL;
+		}
+	}
+}
+
 void NIEngine::ProcessData()
 {
     nite::UserTrackerFrameRef userTrackerFrame;
     nite::HandTrackerFrameRef handFrame;
     _isAlive = true;
     _shouldRun = true;
+
+	ConstructFilters();
 
     printf("NIEngine running...\n");
 
@@ -87,6 +115,7 @@ void NIEngine::ProcessData()
             ReadGestureByID(handFrame.getGestures(),activeID);
         }
     }
+	DestructFilters();
 }
 
 std::string NIEngine::GetNameFromGestureType(nite::GestureType type)
@@ -162,12 +191,17 @@ nite::UserId NIEngine::FindGestureOwner(const nite::Point3f& handPoint, int xDis
 
 void NIEngine::ReadSkeleton(const nite::UserData* pUser)
 {
+	nite::Point3f tmpPoint;
+	nite::Point3f filteredPoint;
+
     for (int i = 0; i < NUM_OF_SUPPORTED_JOINT; ++i)
     {
         if (_jointMap[i] == 1)
         {
             _joint[i] = pUser->getSkeleton().getJoint((nite::JointType)i);
-            _projJoint[i] = WorldToProjective(_joint[i].getPosition());
+            tmpPoint = _joint[i].getPosition();
+			filteredPoint = _filters[i]->filter(tmpPoint,_latestTs);
+			_projJoint[i] = WorldToProjective(filteredPoint);
         }
     }
 }

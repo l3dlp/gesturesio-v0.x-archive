@@ -2,6 +2,7 @@
 #include <list>
 #include "OpenNI.h"
 #include "NiTE.h"
+#include "OneEuroFilter.h"
 
 typedef enum
 {
@@ -14,6 +15,61 @@ typedef struct
     std::string name;
     uint64_t timeStamp;
 }GestureInfo;
+
+//// 3D point filter
+// Using one euro filter, a simple speed-based Low-pass filter.
+// More info here: http://www.lifl.fr/~casiez/1euro/
+struct Point3DFilter
+{
+	Point3DFilter(double _freq, double _mincutoff, double _beta, double _dcutoff): isEnabled(true)
+	{
+		filterX.setFreq(_freq);
+		filterX.setMincutoff(_mincutoff);
+		filterX.setBeta(_beta);
+		filterX.setDcutoff(_dcutoff);
+
+		filterY.setFreq(_freq);
+		filterY.setMincutoff(_mincutoff);
+		filterY.setBeta(_beta);
+		filterY.setDcutoff(_dcutoff);
+
+		filterZ.setFreq(_freq);
+		filterZ.setMincutoff(_mincutoff);
+		filterZ.setBeta(_beta);
+		filterZ.setDcutoff(_dcutoff);
+	}
+
+private:
+	one_euro_filter<> filterX;
+	one_euro_filter<> filterY;
+	one_euro_filter<> filterZ;
+	bool isEnabled;
+
+public:
+	nite::Point3f filter(const nite::Point3f point, double timeStamp)
+	{
+		nite::Point3f filteredPoint;
+
+		if (isEnabled == true)
+		{
+			filteredPoint.x = filterX(point.x,timeStamp);
+			filteredPoint.y = filterY(point.y,timeStamp);
+			filteredPoint.z = filterZ(point.z,timeStamp);
+		}
+		else
+		{
+			filteredPoint = point;
+			printf("filter disabled! \n");
+		}
+
+		return filteredPoint;
+	}
+
+	void enable(bool enabled)
+	{
+		isEnabled = enabled;
+	}
+};
 
 class NIEngine
 {
@@ -31,6 +87,7 @@ private:
     int _jointMap[NUM_OF_SUPPORTED_JOINT];
     nite::SkeletonJoint _joint[NUM_OF_SUPPORTED_JOINT];
     nite::Point3f _projJoint[NUM_OF_SUPPORTED_JOINT]; // Projective joints
+	Point3DFilter* _filters[NUM_OF_SUPPORTED_JOINT];
     std::list<GestureInfo> _gestures;
     uint64_t _latestTs;
 
@@ -61,6 +118,8 @@ private:
     nite::UserId FindGestureOwner(const nite::Point3f& handPoint,int xDist, int yDist); // xDist/yDist - represents distance from current hand point's x/y
     std::string GetNameFromGestureType(nite::GestureType type);
     nite::Point3f WorldToProjective(const nite::Point3f& orig);
+	void ConstructFilters();
+	void DestructFilters();
 };
 
 typedef struct

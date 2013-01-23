@@ -73,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NIEngine.h" />
+    <ClInclude Include="OneEuroFilter.h" />
     <ClInclude Include="tinythread.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
