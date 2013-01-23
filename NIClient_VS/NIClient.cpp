@@ -98,7 +98,8 @@ bool Query()
 		if(bytesSent == 10)
 		{
 			niSocket.Receive(MAX_PACKET-1);
-			memcpy(&data,niSocket.GetData(),MAX_PACKET-1);
+			memcpy(&data,niSocket.GetData(),niSocket.GetBytesReceived());
+
 			gesture.clear();
 			//printf("echo: %d %s\n",niSocket.GetBytesReceived(),data);
 
@@ -136,13 +137,7 @@ bool Query()
 				it++;
 				headPosZ = atof((*it).c_str());
 				it++;
-				gesture = (*it).c_str();
-
-				if (gesture.empty() == false)
-				{
-					printf("%s\n",gesture);
-				}
-				
+				gesture = (*it).c_str();				
 			}
 		}
 

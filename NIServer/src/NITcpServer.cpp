@@ -55,6 +55,8 @@ void NITcpServer::startWrite(QString echo)
 {
     if(client)
         client->write(echo.toAscii(),echo.length());
+
+    qDebug("%d %s",echo.length(),echo.toAscii());
 }
 
 void NITcpServer::clientDisconnected()
