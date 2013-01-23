@@ -202,6 +202,7 @@ void NIEngine::ReadSkeleton(const nite::UserData* pUser)
             tmpPoint = _joint[i].getPosition();
 			filteredPoint = _filters[i]->filter(tmpPoint,_latestTs);
 			_projJoint[i] = WorldToProjective(filteredPoint);
+			//printf("%f %f %f \n",filteredPoint.x, filteredPoint.y, filteredPoint.z);
         }
     }
 }

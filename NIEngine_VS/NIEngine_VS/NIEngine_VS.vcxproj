@@ -70,11 +70,13 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NIEngine.cpp" />
     <ClCompile Include="tinythread.cpp" />
+    <ClCompile Include="Viewer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NIEngine.h" />
     <ClInclude Include="OneEuroFilter.h" />
     <ClInclude Include="tinythread.h" />
+    <ClInclude Include="Viewer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,16 +1,18 @@
 #include <iostream>
 #include "NIEngine.h"
+#include "Viewer.h"
 
 int main(int argc, char** argv)
 {
+	NIEngine::GetInstance()->SetProfile(SKEL_PROFILE_HANDS_AND_HEAD);
 	NIEngine::GetInstance()->Init();
 	NIEngine::GetInstance()->Start();
 
-	std::cin.get();
+	Viewer viewer;
+	viewer.Init(argc, argv);
+	viewer.Run();
 
 	NIEngine::GetInstance()->Terminate(); 
-
-	std::cin.get();
 
 	return 0;
 }
