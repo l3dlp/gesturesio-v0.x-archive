@@ -6,7 +6,8 @@ NIEngine* NIEngine::_instance = 0;
 
 NIEngine::NIEngine()
 {
-
+    _pUserTracker = NULL;
+    _pHandTracker = NULL;
 }
 
 NIEngine::~NIEngine()
@@ -73,6 +74,9 @@ void NIEngine::ProcessData()
             continue;
         }
 
+        if(_pUserTracker == NULL)
+            continue;
+
         nite::Status niteRc = _pUserTracker->readFrame(&userTrackerFrame);
 
         if (niteRc != nite::STATUS_OK)
@@ -103,6 +107,9 @@ void NIEngine::ProcessData()
         }
 
         // Read gesture
+        if(_pHandTracker == NULL)
+            continue;
+
         niteRc = _pHandTracker->readFrame(&handFrame);
         if (niteRc != nite::STATUS_OK)
         {
@@ -339,10 +346,12 @@ void NIEngine::Terminate()
 {
     _isAlive = false; // Wait until the thread ends?
 
-    //delete _pHandTracker;
-    //delete _pUserTracker;
-    //nite::NiTE::shutdown();
-    //openni::OpenNI::shutdown();
+    delete _pHandTracker;
+    _pHandTracker = NULL;
+    delete _pUserTracker;
+    _pUserTracker = NULL;
+    nite::NiTE::shutdown();
+    openni::OpenNI::shutdown();
     printf("NIEngine terminated.\n");
 }
 

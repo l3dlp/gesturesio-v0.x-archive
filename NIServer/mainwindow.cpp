@@ -89,10 +89,7 @@ void MainWindow::startNIServer()
 
 void MainWindow::stopNIServer()
 {
-    NIServer::StopNIService();
-
     pUi->statusLabel->setText("Stopping server...");
-
     pInitWorker->End();
 }
 
