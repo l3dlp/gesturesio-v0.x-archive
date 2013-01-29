@@ -23,27 +23,35 @@ MainWindow::~MainWindow()
 
 void MainWindow::startNIServer()
 {
+    bool res;
     int limitedTime;
     QString str;
     ui->statusLabel->setText("Checking License...");
-    license_State stat = CheckLicense();
+    NIServer::license_State stat = NIServer::CheckLicense();
 
     switch(stat)
     {
-    case LICENSE_VALID:
-        StartNIService();
-        ui->statusLabel->setText("License is valid, NIServer started.");
+    case NIServer::LICENSE_VALID:
+        res = NIServer::StartNIService();
+        if(res)
+        {
+           ui->statusLabel->setText("License is valid, NIServer started.");
+        }
+        else
+        {
+           ui->statusLabel->setText("License is valid, but failed to start NIEngine.");
+        }
         break;
-    case LICENSE_INVALID:
+    case NIServer::LICENSE_INVALID:
         ui->statusLabel->setText("License is invalid. NIServer is unable to start.");
         break;
-    case LICENSE_TIMELIMITED:
-        limitedTime = GetLimitedTime();
+    case NIServer::LICENSE_TIMELIMITED:
+        limitedTime = NIServer::GetLimitedTime();
         timer->start(limitedTime*60*100);
         str.sprintf("License will expire in %d minutes. NIServer started.",limitedTime);
         ui->statusLabel->setText(str);
         break;
-    case LICENSE_UNKNOWN:
+    case NIServer::LICENSE_UNKNOWN:
     default:
         ui->statusLabel->setText("License validation failed. NIServer will not start.");
         break;
@@ -52,13 +60,13 @@ void MainWindow::startNIServer()
 
 void MainWindow::stopNIServer()
 {
-    StopNIService();
+    NIServer::StopNIService();
 }
 
 void MainWindow::licenseExpired()
 {
     timer->stop();
-    //StopNIService();
+    //NIServer::StopNIService();
     //QMessageBox::information(this,"info","Times out, license expired! NIServer stopped.");
     ui->statusLabel->setText("Times out, license expired! NIServer stopped.");
 }

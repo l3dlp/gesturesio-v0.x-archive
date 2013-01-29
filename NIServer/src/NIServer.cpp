@@ -1,34 +1,28 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <vector>
 #include <stack>
 #include "NIEngine.h"
 #include "Utils.h"
 #include "NIServer.h"
-#include "NITcpServer.h"
 
-using namespace std;
+string NIServer::keyword = "";
+string NIServer::logIn = "";
+string NIServer::logOut = "";
+string NIServer::clientIn = "";
+string NIServer::clientOut = "";
 
-#define SERVER_PORT 6789
+int NIServer::limitedTime = 0;
+bool NIServer::isRunning = false;
+NITcpServer* NIServer::pTcpServer = NULL;
 
-string g_keyword;
-string g_logIn;
-string g_logOut;
-string g_clientIn;
-string g_clientOut;
-
-int g_limitedTime = 0;
-bool g_isRunning = false;
-NITcpServer* g_tcpServer = NULL;
-
-string ReadLicense(char* fileName)
+string NIServer::ReadLicense(char* fileName)
 {
 	string keyword = "";
-	ifstream licenseFile;
+    ifstream licenseFile;
 
-	licenseFile.open(fileName);
+    licenseFile.open(fileName);
 	if (licenseFile.is_open())
 	{
 		getline(licenseFile,keyword);
@@ -38,9 +32,9 @@ string ReadLicense(char* fileName)
 	return keyword;
 }
 
-license_State ValidateLicense(string keyword)
+NIServer::license_State NIServer::ValidateLicense(string keyword)
 {
-    license_State licenseStat = LICENSE_UNKNOWN;
+    NIServer::license_State licenseStat = LICENSE_UNKNOWN;
 
 	Logger::GetInstance()->Log("validating your license...");
 
@@ -63,7 +57,7 @@ license_State ValidateLicense(string keyword)
             }
             if (it->name == "time_limit" )
             {
-                g_limitedTime = atoi(it->data.c_str());
+                limitedTime = atoi(it->data.c_str());
             }
         }
     }
@@ -71,18 +65,18 @@ license_State ValidateLicense(string keyword)
     return licenseStat;
 }
 
-license_State CheckLicense()
+NIServer::license_State NIServer::CheckLicense()
 {
     Logger::GetInstance()->Log("NIServer Running...");
 
-    license_State liceneStat = LICENSE_UNKNOWN;
+    NIServer::license_State liceneStat = LICENSE_UNKNOWN;
 
     string keyword = ReadLicense("license.txt");
 
-    g_logIn = "https://api.activedooh.com/v1/" + keyword + "/log/in.xml";
-    g_logOut = "https://api.activedooh.com/v1/" + keyword + "/log/out.xml";
-    g_clientIn = "https://api.activedooh.com/v1" + keyword + "/client/in.xml";
-    g_clientOut = "https://api.activedooh.com/v1" + keyword + "/client/out.xml";
+    logIn = "https://api.activedooh.com/v1/" + keyword + "/log/in.xml";
+    logOut = "https://api.activedooh.com/v1/" + keyword + "/log/out.xml";
+    clientIn = "https://api.activedooh.com/v1" + keyword + "/client/in.xml";
+    clientOut = "https://api.activedooh.com/v1" + keyword + "/client/out.xml";
 
     if (keyword.empty())
     {
@@ -100,42 +94,47 @@ license_State CheckLicense()
     return liceneStat;
 }
 
-int GetLimitedTime()
+int NIServer::GetLimitedTime()
 {
-    return g_limitedTime;
+    return limitedTime;
 }
 
-void StartNIService()
+bool NIServer::StartNIService()
 {
-    if(g_isRunning == false)
-    {
-        HttpRequest(g_logIn.c_str());
+    bool res = true;
 
-        g_tcpServer = new NITcpServer();
-        g_tcpServer->SetClientLog(g_clientIn,g_clientOut);
-        g_tcpServer->Start(SERVER_PORT);
+    if(isRunning == false)
+    {
+        HttpRequest(logIn.c_str());
+
+        pTcpServer = new NITcpServer();
+        pTcpServer->SetClientLog(clientIn,clientOut);
+        pTcpServer->Start(PORT);
 
         NIEngine::GetInstance()->SetProfile(SKEL_PROFILE_HANDS_AND_HEAD);
-        NIEngine::GetInstance()->Init();
-        NIEngine::GetInstance()->Start();
-        g_isRunning = true;
+        res = NIEngine::GetInstance()->Init();
+        if(res)
+        {
+            NIEngine::GetInstance()->Start();
+            isRunning = true;
+        }
     }
 
-    return;
+    return res;
 }
 
-void StopNIService()
+void NIServer::StopNIService()
 {
-    if(g_isRunning == true)
+    if(isRunning == true)
     {
-        g_tcpServer->Stop();
-        delete g_tcpServer;
-        g_tcpServer = NULL;
+        pTcpServer->Stop();
+        delete pTcpServer;
+        pTcpServer = NULL;
 
         NIEngine::GetInstance()->Terminate();
-        HttpRequest(g_logOut.c_str());
+        HttpRequest(logOut.c_str());
 
-        g_isRunning = false;
+        isRunning = false;
     }
     return;
 }
