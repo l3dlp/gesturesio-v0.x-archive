@@ -20,12 +20,14 @@ MainWindow::MainWindow(QWidget *parent) :
     pInitWorker = new InitWorker();
     pInitWorker->moveToThread(pInitThread);
 
-    connect(pInitWorker,SIGNAL(licenseFinished(QString)),this,SLOT(LicenseChecked(QString)));
-    connect(pInitWorker,SIGNAL(finished()),this,SLOT(initFinished()));
+    connect(pInitWorker,SIGNAL(initFinished()),this,SLOT(initFinished()));
+    connect(pInitWorker,SIGNAL(licenseChecked(QString)),this,SLOT(licenseChecked(QString)));
+    connect(pInitWorker,SIGNAL(engineFinished()),this,SLOT(engineLaunched()));
     connect(pInitWorker,SIGNAL(error(QString)),this,SLOT(initFailed(QString)));
 
     connect(pInitThread,SIGNAL(started()),pInitWorker,SLOT(process()));
-    connect(pInitWorker,SIGNAL(finished()),pInitThread,SLOT(quit()));
+    connect(pInitWorker,SIGNAL(ended()),this,SLOT(serverEnded()));
+    connect(pInitWorker,SIGNAL(ended()),pInitThread,SLOT(quit()));
 }
 
 MainWindow::~MainWindow()
@@ -36,10 +38,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::initFinished()
 {
-    pUi->statusLabel->setText("NIServer initialize successfully.");
+    pUi->statusLabel->setText("NIEngine launched.Starting Tcp service..");
+
+    NIServer::StartTcpService();
+    pUi->statusLabel->setText("Tcp service started. Now it's ready to go!");
 }
 
-void MainWindow::LicenseChecked(QString stat)
+void MainWindow::licenseChecked(QString stat)
 {
     int limitedTime;
     QString str;
@@ -57,6 +62,18 @@ void MainWindow::LicenseChecked(QString stat)
     }
 }
 
+void MainWindow::engineLaunched()
+{
+    pUi->statusLabel->setText("Engine launched.");
+}
+
+void MainWindow::serverEnded()
+{
+    pUi->statusLabel->setText("NIService ended. Now start to end Tcp service..");
+    NIServer::StopTcpService();
+    pUi->statusLabel->setText("NIServer completely ended.");
+}
+
 void MainWindow::initFailed(QString str)
 {
     pUi->statusLabel->setText(str);
@@ -67,19 +84,21 @@ void MainWindow::startNIServer()
 {
     pUi->statusLabel->setText("Checking License...");
     pInitThread->start();
-    NIServer::StartTcpService();
+    pInitWorker->Init();
 }
 
 void MainWindow::stopNIServer()
 {
     NIServer::StopNIService();
-    NIServer::StopTcpService();
+
+    pUi->statusLabel->setText("Stopping server...");
+
+    pInitWorker->End();
 }
 
 void MainWindow::licenseExpired()
 {
     pTimer->stop();
-    //NIServer::StopNIService();
-    //QMessageBox::information(this,"info","Times out, license expired! NIServer stopped.");
-    pUi->statusLabel->setText("Times out, license expired! NIServer stopped.");
+    pInitWorker->End();
+    pUi->statusLabel->setText("Time's out, license expired! NIServer stopped.");
 }
