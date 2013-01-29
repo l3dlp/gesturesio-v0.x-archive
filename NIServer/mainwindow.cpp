@@ -2,60 +2,72 @@
 #include "ui_mainwindow.h"
 #include "NIServer.h"
 #include <QtGui>
+#include <QMetaType>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    pUi(new Ui::MainWindow)
 {
-    ui->setupUi(this);
+    qRegisterMetaType<NIServer::license_State>("NILicenseStat");
 
-    timer = new QTimer();
-    connect(timer,SIGNAL(timeout()),this,SLOT(licenseExpired()));
-    connect(ui->startBtn,SIGNAL(clicked()),this,SLOT(startNIServer()));
-    connect(ui->stopBtn,SIGNAL(clicked()),this,SLOT(stopNIServer()));
+    pUi->setupUi(this);
+    pTimer = new QTimer();
+
+    connect(pTimer,SIGNAL(timeout()),this,SLOT(licenseExpired()));
+    connect(pUi->startBtn,SIGNAL(clicked()),this,SLOT(startNIServer()));
+    connect(pUi->stopBtn,SIGNAL(clicked()),this,SLOT(stopNIServer()));
+
+    pInitThread = new QThread;
+    pInitWorker = new InitWorker();
+    pInitWorker->moveToThread(pInitThread);
+
+    connect(pInitWorker,SIGNAL(licenseFinished(QString)),this,SLOT(LicenseChecked(QString)));
+    connect(pInitWorker,SIGNAL(finished()),this,SLOT(initFinished()));
+    connect(pInitWorker,SIGNAL(error(QString)),this,SLOT(initFailed(QString)));
+
+    connect(pInitThread,SIGNAL(started()),pInitWorker,SLOT(process()));
+    connect(pInitWorker,SIGNAL(finished()),pInitThread,SLOT(quit()));
 }
 
 MainWindow::~MainWindow()
 {
-    delete timer;
-    delete ui;
+    delete pTimer;
+    delete pUi;
+}
+
+void MainWindow::initFinished()
+{
+    pUi->statusLabel->setText("NIServer initialize successfully.");
+}
+
+void MainWindow::LicenseChecked(QString stat)
+{
+    int limitedTime;
+    QString str;
+
+    if(stat == "TimeLimitedLicense")
+    {
+        limitedTime = NIServer::GetLimitedTime();
+        pTimer->start(limitedTime*60*100);
+        str.sprintf("License will expire in %d minutes.Starting NIEngine...",limitedTime);
+        pUi->statusLabel->setText(str);
+    }
+    else
+    {
+        pUi->statusLabel->setText(stat);
+    }
+}
+
+void MainWindow::initFailed(QString str)
+{
+    pUi->statusLabel->setText(str);
+    pTimer->stop();
 }
 
 void MainWindow::startNIServer()
 {
-    bool res;
-    int limitedTime;
-    QString str;
-    ui->statusLabel->setText("Checking License...");
-    NIServer::license_State stat = NIServer::CheckLicense();
-
-    switch(stat)
-    {
-    case NIServer::LICENSE_VALID:
-        res = NIServer::StartNIService();
-        if(res)
-        {
-           ui->statusLabel->setText("License is valid, NIServer started.");
-        }
-        else
-        {
-           ui->statusLabel->setText("License is valid, but failed to start NIEngine.");
-        }
-        break;
-    case NIServer::LICENSE_INVALID:
-        ui->statusLabel->setText("License is invalid. NIServer is unable to start.");
-        break;
-    case NIServer::LICENSE_TIMELIMITED:
-        limitedTime = NIServer::GetLimitedTime();
-        timer->start(limitedTime*60*100);
-        str.sprintf("License will expire in %d minutes. NIServer started.",limitedTime);
-        ui->statusLabel->setText(str);
-        break;
-    case NIServer::LICENSE_UNKNOWN:
-    default:
-        ui->statusLabel->setText("License validation failed. NIServer will not start.");
-        break;
-    }
+    pUi->statusLabel->setText("Checking License...");
+    pInitThread->start();
 }
 
 void MainWindow::stopNIServer()
@@ -65,8 +77,8 @@ void MainWindow::stopNIServer()
 
 void MainWindow::licenseExpired()
 {
-    timer->stop();
+    pTimer->stop();
     //NIServer::StopNIService();
     //QMessageBox::information(this,"info","Times out, license expired! NIServer stopped.");
-    ui->statusLabel->setText("Times out, license expired! NIServer stopped.");
+    pUi->statusLabel->setText("Times out, license expired! NIServer stopped.");
 }

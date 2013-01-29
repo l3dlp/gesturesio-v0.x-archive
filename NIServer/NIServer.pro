@@ -20,7 +20,8 @@ SOURCES += main.cpp\
     src/vjson/block_allocator.cpp \
     src/NIServer.cpp \
     src/NITcpServer.cpp \
-    src/CmdParser.cpp
+    src/CmdParser.cpp \
+    initworker.cpp
 
 HEADERS  += mainwindow.h \
     Include/Utils.h \
@@ -58,7 +59,8 @@ HEADERS  += mainwindow.h \
     Include/openni/OniCTypes.h \
     Include/openni/OniCProperties.h \
     Include/openni/OniCEnums.h \
-    Include/openni/OniCAPI.h
+    Include/openni/OniCAPI.h \
+    initworker.h
 
 FORMS    += mainwindow.ui
 
