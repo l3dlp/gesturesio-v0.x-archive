@@ -14,7 +14,8 @@ string NIServer::clientIn = "";
 string NIServer::clientOut = "";
 
 int NIServer::limitedTime = 0;
-bool NIServer::isRunning = false;
+bool NIServer::isNIServing = false;
+bool NIServer::isTcpServing = false;
 NITcpServer* NIServer::pTcpServer = NULL;
 
 string NIServer::ReadLicense(char* fileName)
@@ -99,24 +100,47 @@ int NIServer::GetLimitedTime()
     return limitedTime;
 }
 
-bool NIServer::StartNIService()
+// NOTE: For some reason, tcp socket can't receive data from client when this
+// function is called in QThread. So for now, just call it from main thread,
+// actually tcp socket doesn't cost too much bandwidth so it fine to do it in main thread.
+bool NIServer::StartTcpService()
 {
-    bool res = true;
-
-    if(isRunning == false)
+    if(isTcpServing == false)
     {
-        HttpRequest(logIn.c_str());
+        isTcpServing = true;
 
         pTcpServer = new NITcpServer();
         pTcpServer->SetClientLog(clientIn,clientOut);
         pTcpServer->Start(PORT);
+    }
+    return true;
+}
 
+bool NIServer::StopTcpService()
+{
+    if(isTcpServing == true)
+    {
+        isTcpServing = false;
+
+        pTcpServer->Stop();
+        delete pTcpServer;
+        pTcpServer = NULL;
+    }
+    return true;
+}
+
+bool NIServer::StartNIService()
+{
+    bool res = true;
+
+    if(isNIServing == false)
+    {
         NIEngine::GetInstance()->SetProfile(SKEL_PROFILE_HANDS_AND_HEAD);
         res = NIEngine::GetInstance()->Init();
         if(res)
         {
             NIEngine::GetInstance()->Start();
-            isRunning = true;
+            isNIServing = true;
         }
     }
 
@@ -125,16 +149,10 @@ bool NIServer::StartNIService()
 
 void NIServer::StopNIService()
 {
-    if(isRunning == true)
+    if(isNIServing == true)
     {
-        pTcpServer->Stop();
-        delete pTcpServer;
-        pTcpServer = NULL;
-
         NIEngine::GetInstance()->Terminate();
-        HttpRequest(logOut.c_str());
-
-        isRunning = false;
+        isNIServing = false;
     }
     return;
 }

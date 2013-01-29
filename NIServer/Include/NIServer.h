@@ -19,6 +19,8 @@ public:
 public:
     static bool StartNIService();
     static void StopNIService();
+    static bool StartTcpService();
+    static bool StopTcpService();
     static int GetLimitedTime();
     static license_State CheckLicense();
 
@@ -29,16 +31,19 @@ private:
     static string ReadLicense(char* fileName);
     static license_State ValidateLicense(string keyword);
 
+public:
+    static string logIn;
+    static string logOut;
+
 private:
     const static int PORT = 6789;
 
     static int limitedTime;
-    static bool isRunning;
+    static bool isNIServing;
+    static bool isTcpServing;
     static NITcpServer* pTcpServer;
 
     static string keyword;
-    static string logIn;
-    static string logOut;
     static string clientIn;
     static string clientOut;
 };

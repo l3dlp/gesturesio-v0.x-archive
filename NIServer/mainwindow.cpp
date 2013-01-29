@@ -1,8 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "NIServer.h"
+#include "Utils.h"
 #include <QtGui>
-#include <QMetaType>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -68,11 +68,15 @@ void MainWindow::startNIServer()
 {
     pUi->statusLabel->setText("Checking License...");
     pInitThread->start();
+    NIServer::StartTcpService();
+    HttpRequest(NIServer::logIn.c_str());
 }
 
 void MainWindow::stopNIServer()
 {
     NIServer::StopNIService();
+    NIServer::StopTcpService();
+    HttpRequest(NIServer::logOut.c_str());
 }
 
 void MainWindow::licenseExpired()
