@@ -31,10 +31,6 @@ private:
     static string ReadLicense(char* fileName);
     static license_State ValidateLicense(string keyword);
 
-public:
-    static string logIn;
-    static string logOut;
-
 private:
     const static int PORT = 6789;
 
@@ -44,6 +40,8 @@ private:
     static NITcpServer* pTcpServer;
 
     static string keyword;
+    static string logIn;
+    static string logOut;
     static string clientIn;
     static string clientOut;
 };

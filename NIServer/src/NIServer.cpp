@@ -144,6 +144,11 @@ bool NIServer::StartNIService()
         }
     }
 
+    if(res)
+    {
+        HttpRequest(logIn.c_str());  // Consumes lots of time.
+    }
+
     return res;
 }
 
@@ -154,5 +159,6 @@ void NIServer::StopNIService()
         NIEngine::GetInstance()->Terminate();
         isNIServing = false;
     }
+    HttpRequest(logOut.c_str()); // Consumes lots of time.
     return;
 }
