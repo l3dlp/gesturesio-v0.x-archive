@@ -82,8 +82,9 @@ private:
     openni::Device _device;
     nite::UserTracker* _pUserTracker;
     nite::HandTracker* _pHandTracker;
-    bool _isAlive;
+	bool _isAlive;
     bool _shouldRun;
+	bool _shouldRead;
     int _jointMap[NUM_OF_SUPPORTED_JOINT];
     nite::SkeletonJoint _joint[NUM_OF_SUPPORTED_JOINT];
     nite::Point3f _projJoint[NUM_OF_SUPPORTED_JOINT]; // Projective joints
@@ -95,9 +96,11 @@ public:
     static NIEngine* GetInstance();
     ~NIEngine();
     bool Init();
-    void Terminate();
-    void Start();
-    void Stop();
+    void SignalToEnd();  // Signal the reading thread to end.
+	bool IsAlive();      // Check if the engine is still alive.
+	void Finalize();     // Release the resources after reading thread ends.
+    void StartReading(); // The loop in reading thread will start reading data.
+    void StopReading();  // The loop in reading thread will stop reading data.
     void SetProfile(NISkelProfile profile);
     nite::Point3f GetLeftHandPos();
     nite::Point3f GetRightHandPos();
@@ -106,10 +109,10 @@ public:
     nite::Point3f GetHeadPosProjective();
     nite::Point3f GetHeadPos();
     std::string GetGesture();
+	static void StartThread(void* arg);
 
 private:
     NIEngine();
-    static void StartThread(void* arg);
     void ProcessData();
     nite::UserId SelectActiveUser(const nite::Array<nite::UserData>& users);
     void ManageTracker(const nite::Array<nite::UserData>& users, nite::UserId activeID);

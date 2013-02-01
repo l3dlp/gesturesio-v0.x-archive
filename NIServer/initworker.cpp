@@ -1,4 +1,6 @@
 #include "initworker.h"
+#include "NIEngine.h"
+#include "tinyThread/tinythread.h"
 
 InitWorker::InitWorker(QObject *parent) :
     QObject(parent)
@@ -47,6 +49,14 @@ void InitWorker::process()
     bool shouldRun = true;
 
     qDebug("worker running..");
+
+	// Create a dedicated thread to handle data reading.
+	// The reason to do it here is to keep the thread reference before thread is joint.
+	// Ideally the worker should not know NIEngine except NIServer...
+	THREADSTRUCT* param = new THREADSTRUCT;
+	param->_this = NIEngine::GetInstance();
+	tthread::thread niThread(NIEngine::StartThread,param);
+	niThread.detach();
 
     while(shouldRun)
     {
@@ -101,14 +111,21 @@ void InitWorker::process()
             break;
 
         case ToEnd:
-            NIServer::StopNIService();
+			qDebug("Signal to end...");
+            NIServer::SignalToStopNIService();
             curMission = Idle;
-            shouldRun = false;
             break;
 
         default:
             break;
         }
+
+		if (NIServer::CanStopNIService() == true)
+		{
+			NIServer::StopNIService();
+			shouldRun = false;
+			qDebug("NIService really ended.");
+		}
     }
     qDebug("worker ended");
     emit ended();

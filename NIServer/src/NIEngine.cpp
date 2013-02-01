@@ -60,16 +60,15 @@ void NIEngine::ProcessData()
 {
     nite::UserTrackerFrameRef userTrackerFrame;
     nite::HandTrackerFrameRef handFrame;
-    _isAlive = true;
-    _shouldRun = true;
-
+	_isAlive = true;
+	_shouldRun = true;
+	_shouldRead = false;
 	ConstructFilters();
-
     printf("NIEngine running...\n");
 
-    while (_isAlive)
+    while (_shouldRun)
     {
-        if (_shouldRun == false)
+        if (_shouldRead == false)
         {
             continue;
         }
@@ -123,6 +122,7 @@ void NIEngine::ProcessData()
         }
     }
 	DestructFilters();
+	_isAlive = false;
 }
 
 std::string NIEngine::GetNameFromGestureType(nite::GestureType type)
@@ -287,6 +287,7 @@ nite::UserId NIEngine::SelectActiveUser(const nite::Array<nite::UserData>& users
     return activeID;
 }
 
+// Run from logic thread.
 bool NIEngine::Init()
 {
     openni::Status niRc;
@@ -329,42 +330,40 @@ bool NIEngine::Init()
     _pHandTracker->startGestureDetection(nite::GESTURE_WAVE);
     //_pHandTracker->setSmoothingFactor(0.1);
 
-    // Create a dedicated thread to handle the data
-    THREADSTRUCT* param = new THREADSTRUCT;
-    param->_this = this;
-    // TinyThread++, a portable thread implementation is used.
-    // More info here: http://tinythreadpp.bitsnbites.eu/
-    tthread::thread niThread(StartThread,param);
-    //niThread.join();
-    niThread.detach();
-
     printf("NIEngine initialized successfully.\n");
     return true;
 }
 
-void NIEngine::Terminate()
+// Run from logic thread.
+void NIEngine::Finalize()
 {
-    _isAlive = false; // Wait until the thread ends?
-
-    delete _pHandTracker;
-    _pHandTracker = NULL;
-    delete _pUserTracker;
-    _pUserTracker = NULL;
-    nite::NiTE::shutdown();
-    openni::OpenNI::shutdown();
-    printf("NIEngine terminated.\n");
+	delete _pHandTracker;
+	_pHandTracker = NULL;
+	delete _pUserTracker;
+	_pUserTracker = NULL;
+	nite::NiTE::shutdown();
+	openni::OpenNI::shutdown();
 }
 
-void NIEngine::Start()
-{
-    _shouldRun = true;
-    printf("Start reading.\n");
-}
-
-void NIEngine::Stop()
+// Run from logic thread.
+void NIEngine::SignalToEnd()
 {
     _shouldRun = false;
-    printf("Stop reading.\n");
+}
+
+bool NIEngine::IsAlive()
+{
+	return _isAlive;
+}
+
+void NIEngine::StartReading()
+{
+    _shouldRead = true;
+}
+
+void NIEngine::StopReading()
+{
+    _shouldRead = false;
 }
 
 void NIEngine::SetProfile(NISkelProfile profile)
