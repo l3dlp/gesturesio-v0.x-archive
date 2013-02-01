@@ -73,6 +73,12 @@ public:
 
 class NIEngine
 {
+	typedef struct
+	{
+		NIEngine* _this;
+
+	}THREADSTRUCT;
+
 private:
     const static int MAX_DISTANCE = 9999;
     const static short INVALID_ID = 0;
@@ -90,6 +96,7 @@ private:
 	Point3DFilter* _filters[NUM_OF_SUPPORTED_JOINT];
     std::list<GestureInfo> _gestures;
     uint64_t _latestTs;
+	THREADSTRUCT* _threadParam;
 
 public:
     static NIEngine* GetInstance();
@@ -121,9 +128,3 @@ private:
 	void ConstructFilters();
 	void DestructFilters();
 };
-
-typedef struct
-{
-    NIEngine* _this;
-
-}THREADSTRUCT;

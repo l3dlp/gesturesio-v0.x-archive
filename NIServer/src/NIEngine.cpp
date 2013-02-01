@@ -65,6 +65,26 @@ void NIEngine::ProcessData()
 
 	ConstructFilters();
 
+	_pUserTracker = new nite::UserTracker();
+	nite::Status niteRc = _pUserTracker->create(&_device);
+	if (niteRc != nite::STATUS_OK)
+	{
+		printf("Failed to create user tracker.\n");
+		return;
+	}
+
+	_pHandTracker = new nite::HandTracker();
+	niteRc = _pHandTracker->create(&_device);
+	if (niteRc != nite::STATUS_OK)
+	{
+		printf("Failed to create hand tracker.\n");
+		return;
+	}
+
+	_pHandTracker->startGestureDetection(nite::GESTURE_CLICK);
+	_pHandTracker->startGestureDetection(nite::GESTURE_WAVE);
+	//_pHandTracker->setSmoothingFactor(0.1);
+
     printf("NIEngine running...\n");
 
     while (_isAlive)
@@ -122,6 +142,13 @@ void NIEngine::ProcessData()
             ReadGestureByID(handFrame.getGestures(),activeID);
         }
     }
+
+	delete _pUserTracker;
+	_pUserTracker = NULL;
+
+	delete _pHandTracker;
+	_pHandTracker = NULL;
+
 	DestructFilters();
 }
 
@@ -308,34 +335,13 @@ bool NIEngine::Init()
     }
 
     nite::NiTE::initialize();
-    _pUserTracker = new nite::UserTracker();
-    _pHandTracker = new nite::HandTracker();
-
-    niteRc = _pUserTracker->create(&_device);
-    if (niteRc != nite::STATUS_OK)
-    {
-        printf("Failed to create user tracker.\n");
-        return false;
-    }
-
-    niteRc = _pHandTracker->create(&_device);
-    if (niteRc != nite::STATUS_OK)
-    {
-        printf("Failed to create hand tracker.\n");
-        return false;
-    }
-
-    _pHandTracker->startGestureDetection(nite::GESTURE_CLICK);
-    _pHandTracker->startGestureDetection(nite::GESTURE_WAVE);
-    //_pHandTracker->setSmoothingFactor(0.1);
 
     // Create a dedicated thread to handle the data
-    THREADSTRUCT* param = new THREADSTRUCT;
-    param->_this = this;
+	_threadParam = new THREADSTRUCT;
+    _threadParam->_this = this;
     // TinyThread++, a portable thread implementation is used.
     // More info here: http://tinythreadpp.bitsnbites.eu/
-    tthread::thread niThread(StartThread,param);
-    //niThread.join();
+    tthread::thread niThread(StartThread,_threadParam);
     niThread.detach();
 
     printf("NIEngine initialized successfully.\n");
@@ -346,12 +352,8 @@ void NIEngine::Terminate()
 {
     _isAlive = false; // Wait until the thread ends?
 
-    delete _pHandTracker;
-    _pHandTracker = NULL;
-    delete _pUserTracker;
-    _pUserTracker = NULL;
-    nite::NiTE::shutdown();
-    openni::OpenNI::shutdown();
+    //nite::NiTE::shutdown();
+    //openni::OpenNI::shutdown();
     printf("NIEngine terminated.\n");
 }
 
