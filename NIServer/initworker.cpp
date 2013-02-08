@@ -59,12 +59,14 @@ void ServerWorker::process()
 	tthread::thread niThread(NIEngine::StartThread,param);
 	niThread.detach();
 
+	bool endCmdIssued = false;
+
     while(shouldRun)
     {
-        if(curMission != Idle)
-        {
-            Logger::GetInstance()->Log("Server worker got new command.");
-        }
+		if (endCmdIssued == true && NIServer::IsNIRunning() == false)
+		{
+			shouldRun = false;
+		}
 
         switch(curMission)
         {
@@ -89,14 +91,14 @@ void ServerWorker::process()
                    emit error(QString("Failed to launch engine"));
                }
             }
-            curMission = Idle;
+			curMission = Idle;
             break;
 
         case ToCheckLicense:
             stat = NIServer::CheckLicense();
             license = ConvertLicenseState(stat);
             emit licenseChecked(license); // Send license message
-            curMission = Idle;
+			curMission = Idle;
             break;
 
         case ToStartNIService:
@@ -109,27 +111,20 @@ void ServerWorker::process()
             {
                 emit error(QString("Failed to start NI service"));
             }
-            curMission = Idle;
+			curMission = Idle;
             break;
 
         case ToEnd:
-			qDebug("Signal to end...");
-            NIServer::SignalToStopNIService();
-            curMission = Idle;
+			NIServer::StopNIService();
+			endCmdIssued = true;
+			curMission = Idle;
             break;
 
         default:
             break;
         }
-
-		if (NIServer::CanStopNIService() == true)
-		{
-			Logger::GetInstance()->Log("Now NI engine thread is really dead");
-			NIServer::StopNIService();
-			shouldRun = false;
-			qDebug("NIService really ended.");
-		}
     }
+
     qDebug("worker ended");
 	Logger::GetInstance()->Log("Server worker thread process ends");
 

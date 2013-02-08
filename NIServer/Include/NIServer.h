@@ -18,18 +18,10 @@ public:
 
 public:
     static bool StartNIService();
-
-	// We can't stop NIService immediately as data reading is running in different thread, 
-	// The correct order: 
-	// 1. SignalToStopNIService()    // It signals the reading thread to end.
-	// 2. CanStopNIService()         // To see if reading thread is really ended.
-	// 3. StopNIService()            // Reading thread ends, now we really stop NIService(release all resources).
-	static void SignalToStopNIService(); 
-	static bool CanStopNIService();
     static void StopNIService();
-
     static bool StartTcpService();
     static bool StopTcpService();
+	static bool IsNIRunning();
     static int GetLimitedTime();
     static license_State CheckLicense();
 

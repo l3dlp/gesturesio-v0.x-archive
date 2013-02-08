@@ -162,22 +162,20 @@ bool NIServer::StartNIService()
     return res;
 }
 
-void NIServer::SignalToStopNIService()
-{
-	NIEngine::GetInstance()->SignalToEnd();
-}
-
-bool NIServer::CanStopNIService()
-{
-	return !NIEngine::GetInstance()->IsAlive();
-}
-
 void NIServer::StopNIService()
 {
 	if (isNIServing == true)
 	{
-		NIEngine::GetInstance()->Finalize();
-		isNIServing = false;
-		HttpRequest(logOut.c_str()); // Consumes lots of time.
+		bool res = NIEngine::GetInstance()->Finalize();
+		if (res == true)
+		{
+			isNIServing = false;
+			HttpRequest(logOut.c_str()); // Consumes lots of time.
+		}
 	}
+}
+
+bool NIServer::IsNIRunning()
+{
+	return NIEngine::GetInstance()->IsAlive();
 }

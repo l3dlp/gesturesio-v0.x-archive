@@ -9,6 +9,8 @@ NIEngine::NIEngine()
 {
     _pUserTracker = NULL;
     _pHandTracker = NULL;
+	_curMission = Idle;
+	_isAlive = false;
 }
 
 NIEngine::~NIEngine()
@@ -57,111 +59,159 @@ void NIEngine::DestructFilters()
 	}
 }
 
+// Do everything about OpenNI and NiTE in same thread.
 void NIEngine::ProcessData()
 {
-	nite::Status niteRc;
-    nite::UserTrackerFrameRef userTrackerFrame;
-    nite::HandTrackerFrameRef handFrame;
-	_isAlive = true;
-	_shouldRun = true;
-	_shouldRead = false;
+	bool shouldRun = true;
+	bool shouldRead = false;
+	bool inited = false;
+
 	ConstructFilters();
 
+	_isAlive = true;
 	Logger::GetInstance()->Log("NI engine thread running..");
 
-    while (_shouldRun)
-    {
-        if (_shouldRead == false)
-        {
-            continue;
-        }
-
-		try
+	while(shouldRun)
+	{
+		switch(_curMission)
 		{
-			if(_pUserTracker == NULL)
-				continue;
+		case ToInit:
+			inited = InternalInit();
+			shouldRead = true; // Start reading once init
+			_curMission = Idle;
+			break;
 
-			niteRc = _pUserTracker->readFrame(&userTrackerFrame);
+		case ToStartReading:
+			shouldRead = true;
+			Logger::GetInstance()->Log("NI engine start reading");
+			_curMission = Idle;
+			break;
 
-			if (niteRc != nite::STATUS_OK)
-			{
-				Logger::GetInstance()->Log("Fail to read next user tracker frame");
-				continue;
-			}
-		}
-		catch(...)
-		{
-			Logger::GetInstance()->Log("***Exception*** happens on reading next user tracker frame");
-			continue;
-		}
+		case ToStopReading:
+			shouldRead = false;
+			Logger::GetInstance()->Log("NI engine stop reading");
+			_curMission = Idle;
+			break;
 
-		nite::UserId activeID;
-		
-		try
-		{
-			_latestTs = userTrackerFrame.getTimestamp();
-			const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
+		case ToEnd:
+			shouldRead = false;
+			shouldRun = false;
+			InternalFinalize();
+			_curMission = Idle;
+			break;
 
-			// NOTE: we can still read valid ID even when the user left, because NiTE will keep it
-			// for a certain time to allow user come back before really drop the ID.
-			// So keep it in mind in case we need to handle it - stop reading skeleton data immediately once user left.
-			activeID = SelectActiveUser(users);
-
-			if (activeID != INVALID_ID)
-			{
-				// The tracker manager will make sure we track one user only, to save bandwidth.
-				ManageTracker(users, activeID);
-
-				// Read data from active user
-				const nite::UserData* pUser = userTrackerFrame.getUserById(activeID);
-				if (pUser->getSkeleton().getState() == nite::SKELETON_TRACKED)
-				{
-					ReadSkeleton(pUser);
-				}
-			}
-		}
-		catch(...)
-		{
-			Logger::GetInstance()->Log("***Exception*** happens on processing user tracker data");
-			continue;
+		case Idle:
+		default:
+			break;
 		}
 
-		try
+		// Currently we don't supply feedback to let caller thread
+		// know whether the initialzation is success, so caller thread
+		// might ask to read when initilization is not handled yet.
+		// so we check initialization state here to make sure reading after init.
+		if (shouldRead && inited)
 		{
-			// Read gesture
-			if(_pHandTracker == NULL)
-				continue;
+			Read();
+		}
+	}
 
-			niteRc = _pHandTracker->readFrame(&handFrame);
-			if (niteRc != nite::STATUS_OK)
-			{
-				Logger::GetInstance()->Log("Failed to read next hand frame");
-				continue;
-			}
-		}
-		catch(...)
-		{
-			Logger::GetInstance()->Log("***Exception*** happens on reading next hand frame");
-			continue;
-		}
-
-		try
-		{
-			if (activeID != INVALID_ID)
-			{
-				ReadGestureByID(handFrame.getGestures(),activeID);
-			}
-		}
-		catch(...)
-		{
-			Logger::GetInstance()->Log("***Exception*** happens on reading gesture");
-			continue;
-		}
-    }
-	Logger::GetInstance()->Log("NI engine thread process ends");
-	
 	DestructFilters();
+	Logger::GetInstance()->Log("NI engine thread process ends");
 	_isAlive = false;
+}
+
+bool NIEngine::IsAlive()
+{
+	return _isAlive;
+}
+
+void NIEngine::Read()
+{
+	nite::Status niteRc;
+	nite::UserTrackerFrameRef userTrackerFrame;
+	nite::HandTrackerFrameRef handFrame;
+
+	if(_pUserTracker == NULL)
+		return;
+
+	try
+	{
+		niteRc = _pUserTracker->readFrame(&userTrackerFrame);
+
+		if (niteRc != nite::STATUS_OK)
+		{
+			Logger::GetInstance()->Log("Fail to read next user tracker frame");
+			return;
+		}
+	}
+	catch(...)
+	{
+		Logger::GetInstance()->Log("***Exception*** happens on reading next user tracker frame");
+		return;
+	}
+
+	nite::UserId activeID;
+		
+	try
+	{
+		_latestTs = userTrackerFrame.getTimestamp();
+		const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
+
+		// NOTE: we can still read valid ID even when the user left, because NiTE will keep it
+		// for a certain time to allow user come back before really drop the ID.
+		// So keep it in mind in case we need to handle it - stop reading skeleton data immediately once user left.
+		activeID = SelectActiveUser(users);
+
+		if (activeID != INVALID_ID)
+		{
+			// The tracker manager will make sure we track one user only, to save bandwidth.
+			ManageTracker(users, activeID);
+
+			// Read data from active user
+			const nite::UserData* pUser = userTrackerFrame.getUserById(activeID);
+			if (pUser->getSkeleton().getState() == nite::SKELETON_TRACKED)
+			{
+				ReadSkeleton(pUser);
+			}
+		}
+	}
+	catch(...)
+	{
+		Logger::GetInstance()->Log("***Exception*** happens on processing user tracker data");
+		return;
+	}
+
+	// Read gesture
+	if(_pHandTracker == NULL)
+		return;
+
+	try
+	{
+		niteRc = _pHandTracker->readFrame(&handFrame);
+		if (niteRc != nite::STATUS_OK)
+		{
+			Logger::GetInstance()->Log("Failed to read next hand frame");
+			return;
+		}
+	}
+	catch(...)
+	{
+		Logger::GetInstance()->Log("***Exception*** happens on reading next hand frame");
+		return;
+	}
+
+	try
+	{
+		if (activeID != INVALID_ID)
+		{
+			ReadGestureByID(handFrame.getGestures(),activeID);
+		}
+	}
+	catch(...)
+	{
+		Logger::GetInstance()->Log("***Exception*** happens on reading gesture");
+		return;
+	}
 }
 
 std::string NIEngine::GetNameFromGestureType(nite::GestureType type)
@@ -326,8 +376,20 @@ nite::UserId NIEngine::SelectActiveUser(const nite::Array<nite::UserData>& users
     return activeID;
 }
 
-// Run from logic thread.
 bool NIEngine::Init()
+{
+	if (_curMission == Idle)
+	{
+		_curMission = ToInit;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool NIEngine::InternalInit()
 {
     openni::Status niRc;
     nite::Status niteRc;
@@ -409,8 +471,20 @@ bool NIEngine::Init()
     return true;
 }
 
-// Run from logic thread.
-void NIEngine::Finalize()
+bool NIEngine::Finalize()
+{
+	if (_curMission == Idle)
+	{
+		_curMission = ToEnd;
+		return true; // we should also return the real status
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void NIEngine::InternalFinalize()
 {
 	Logger::GetInstance()->Log("Start to shutdown OpenNI..");
 
@@ -424,27 +498,21 @@ void NIEngine::Finalize()
 	Logger::GetInstance()->Log("OpenNI is shutdown.");
 }
 
-// Run from logic thread.
-void NIEngine::SignalToEnd()
-{
-	Logger::GetInstance()->Log("Send ending signal to NI engine thread");
-    _shouldRun = false;
-}
-
-bool NIEngine::IsAlive()
-{
-	return _isAlive;
-}
-
 void NIEngine::StartReading()
 {
-	Logger::GetInstance()->Log("Send data reading command to NI Engine");
-    _shouldRead = true;
+	// This is not working for now, as init is run async.
+	if (_curMission == Idle)
+	{
+		_curMission = ToStartReading;
+	}
 }
 
 void NIEngine::StopReading()
 {
-    _shouldRead = false;
+	if (_curMission == Idle)
+	{
+		_curMission = ToStopReading;
+	}
 }
 
 void NIEngine::SetProfile(NISkelProfile profile)
@@ -548,6 +616,8 @@ std::string NIEngine::GetGesture()
     return gesture;
 }
 
+// This function could be dangeous, as it's called from different thread
+// from user tracker is handled.
 nite::Point3f NIEngine::WorldToProjective(const nite::Point3f& orig)
 {
     nite::Point3f pos;

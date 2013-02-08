@@ -73,7 +73,17 @@ public:
 
 class NIEngine
 {
+
 private:
+	enum Mission
+	{
+		ToInit,
+		ToStartReading,
+		ToStopReading,
+		ToEnd,
+		Idle
+	};
+
     const static int MAX_DISTANCE = 9999;
     const static short INVALID_ID = 0;
     const static int NUM_OF_SUPPORTED_JOINT = nite::JOINT_RIGHT_FOOT + 1;// in NiTE2, JOINT_RIGHT_FOOT is the last joint, starting from 0.
@@ -82,23 +92,21 @@ private:
     openni::Device _device;
     nite::UserTracker* _pUserTracker;
     nite::HandTracker* _pHandTracker;
-	bool _isAlive;
-    bool _shouldRun;
-	bool _shouldRead;
     int _jointMap[NUM_OF_SUPPORTED_JOINT];
     nite::SkeletonJoint _joint[NUM_OF_SUPPORTED_JOINT];
     nite::Point3f _projJoint[NUM_OF_SUPPORTED_JOINT]; // Projective joints
 	Point3DFilter* _filters[NUM_OF_SUPPORTED_JOINT];
     std::list<GestureInfo> _gestures;
     uint64_t _latestTs;
+	Mission _curMission;
+	bool _isAlive;
 
 public:
     static NIEngine* GetInstance();
     ~NIEngine();
-    bool Init();
-    void SignalToEnd();  // Signal the reading thread to end.
-	bool IsAlive();      // Check if the engine is still alive.
-	void Finalize();     // Release the resources after reading thread ends.
+	bool Init();
+	bool Finalize();
+	bool IsAlive();
     void StartReading(); // The loop in reading thread will start reading data.
     void StopReading();  // The loop in reading thread will stop reading data.
     void SetProfile(NISkelProfile profile);
@@ -113,6 +121,9 @@ public:
 
 private:
     NIEngine();
+	bool InternalInit();
+	void Read();
+	void InternalFinalize();
     void ProcessData();
     nite::UserId SelectActiveUser(const nite::Array<nite::UserData>& users);
     void ManageTracker(const nite::Array<nite::UserData>& users, nite::UserId activeID);
