@@ -1,6 +1,7 @@
 #include "initworker.h"
 #include "NIEngine.h"
 #include "tinyThread/tinythread.h"
+#include "Utils.h"
 
 ServerWorker::ServerWorker(QObject *parent) :
     QObject(parent)
@@ -21,20 +22,20 @@ QString ServerWorker::ConvertLicenseState(NIServer::license_State stat)
     switch(stat)
     {
     case NIServer::LICENSE_VALID:
-        license = "License is valid,starting NIEngine...";
+        license = "Valid license";
         break;
 
     case NIServer::LICENSE_INVALID:
-        license = "License is invalid.";
+        license = "Invalid license";
         break;
 
     case NIServer::LICENSE_TIMELIMITED:
-        license = "TimeLimitedLicense";
+        license = "TimeLimited license";
         break;
 
     case NIServer::LICENSE_UNKNOWN:
     default:
-        license = "Failed to validate license.";
+        license = "Unknown license.";
         break;
     }
 
@@ -48,7 +49,7 @@ void ServerWorker::process()
     NIServer::license_State stat;
     bool shouldRun = true;
 
-    qDebug("worker running..");
+	Logger::GetInstance()->Log("Server worker thread process running..");
 
 	// Create a dedicated thread to handle data reading.
 	// The reason to do it here is to keep the thread reference before thread is joint.
@@ -62,7 +63,7 @@ void ServerWorker::process()
     {
         if(curMission != Idle)
         {
-            qDebug("new command comes");
+            Logger::GetInstance()->Log("Server worker got new command.");
         }
 
         switch(curMission)
@@ -71,6 +72,7 @@ void ServerWorker::process()
             // Check license
             stat = NIServer::CheckLicense();
             license = ConvertLicenseState(stat);
+			Logger::GetInstance()->Log("License state: " + license.toStdString());
             emit licenseChecked(license); // Send license message
 
             // Start Engine
@@ -122,12 +124,15 @@ void ServerWorker::process()
 
 		if (NIServer::CanStopNIService() == true)
 		{
+			Logger::GetInstance()->Log("Now NI engine thread is really dead");
 			NIServer::StopNIService();
 			shouldRun = false;
 			qDebug("NIService really ended.");
 		}
     }
     qDebug("worker ended");
+	Logger::GetInstance()->Log("Server worker thread process ends");
+
     emit ended();
 }
 

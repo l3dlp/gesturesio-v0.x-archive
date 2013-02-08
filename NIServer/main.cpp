@@ -1,13 +1,17 @@
 #include <QtGui/QApplication>
 #include "mainwindow.h"
-#include "NITcpServer.h"
+#include "Utils.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    //NITcpServer g_tcpServer;
+    
+	Logger::GetInstance()->Log("");
+	Logger::GetInstance()->Log("");
+	Logger::GetInstance()->Log("NI Server launched");
+
     MainWindow w;
     w.show();
-    
+
     return a.exec();
 }

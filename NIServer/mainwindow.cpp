@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "NIServer.h"
 #include <QtGui>
+#include "Utils.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -53,10 +54,13 @@ void MainWindow::licenseChecked(QString stat)
     int limitedTime;
     QString str;
 
-    if(stat == "TimeLimitedLicense")
+	// Yes, for now just to compare the state string.
+    if(stat == "TimeLimited license")
     {
         limitedTime = NIServer::GetLimitedTime();
         pTimer->start(limitedTime*60*100);
+
+		Logger::GetInstance()->Log("Timer started for limited license");
         str.sprintf("License will expire in %d minutes.Starting NIEngine...",limitedTime);
         pUi->statusLabel->setText(str);
     }

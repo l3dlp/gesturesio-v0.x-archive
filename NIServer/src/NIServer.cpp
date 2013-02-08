@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <vector>
 #include <stack>
@@ -29,7 +30,7 @@ string NIServer::ReadLicense(char* fileName)
 		getline(licenseFile,keyword);
 		licenseFile.close();
 	}	
-	Logger::GetInstance()->Log("keyword: " + keyword);
+	Logger::GetInstance()->Log("Read license keyword: " + keyword);
 	return keyword;
 }
 
@@ -37,7 +38,7 @@ NIServer::license_State NIServer::ValidateLicense(string keyword)
 {
     NIServer::license_State licenseStat = LICENSE_UNKNOWN;
 
-	Logger::GetInstance()->Log("validating your license...");
+	Logger::GetInstance()->Log("Validating license: " + keyword);
 
 	// call URL
 	string url = "https://api.activedooh.com/v1/" + keyword + "/status.xml";
@@ -68,7 +69,7 @@ NIServer::license_State NIServer::ValidateLicense(string keyword)
 
 NIServer::license_State NIServer::CheckLicense()
 {
-    Logger::GetInstance()->Log("NIServer Running...");
+    Logger::GetInstance()->Log("Start to check license..");
 
     NIServer::license_State liceneStat = LICENSE_UNKNOWN;
 
@@ -79,17 +80,9 @@ NIServer::license_State NIServer::CheckLicense()
     clientIn = "https://api.activedooh.com/v1" + keyword + "/client/in.xml";
     clientOut = "https://api.activedooh.com/v1" + keyword + "/client/out.xml";
 
-    if (keyword.empty())
-    {
-        Logger::GetInstance()->Log("Failed to read keyword...");
-    }
-    else
+    if (!keyword.empty())
     {
         liceneStat = ValidateLicense(keyword);
-        if (liceneStat == LICENSE_UNKNOWN)
-        {
-            Logger::GetInstance()->Log("License validation failed..");
-        }
     }
 
     return liceneStat;
@@ -105,19 +98,37 @@ int NIServer::GetLimitedTime()
 // actually tcp socket doesn't cost too much bandwidth so it fine to do it in main thread.
 bool NIServer::StartTcpService()
 {
+	Logger::GetInstance()->Log("Starting Tcp service");
+
     if(isTcpServing == false)
     {
-        isTcpServing = true;
+		isTcpServing = true;
 
-        pTcpServer = new NITcpServer();
-        pTcpServer->SetClientLog(clientIn,clientOut);
-        pTcpServer->Start(PORT);
+		try
+		{
+			pTcpServer = new NITcpServer();
+			pTcpServer->SetClientLog(clientIn,clientOut);
+			pTcpServer->Start(PORT);
+		}
+		catch(...)
+		{
+			Logger::GetInstance()->Log("***Exception*** happens on starting Tcp server.");
+			return false;
+		}
     }
+
+	int port = PORT;
+	std::ostringstream s;
+	s << port;
+	Logger::GetInstance()->Log("Tcp service started, listening on port: " + s.str());
+
     return true;
 }
 
 bool NIServer::StopTcpService()
 {
+	Logger::GetInstance()->Log("Ending Tcp service..");
+
     if(isTcpServing == true)
     {
         isTcpServing = false;
@@ -126,6 +137,9 @@ bool NIServer::StopTcpService()
         delete pTcpServer;
         pTcpServer = NULL;
     }
+
+	Logger::GetInstance()->Log("Tcp service ended");
+
     return true;
 }
 
