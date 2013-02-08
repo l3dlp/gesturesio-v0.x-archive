@@ -16,18 +16,22 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(pUi->startBtn,SIGNAL(clicked()),this,SLOT(startNIServer()));
     connect(pUi->stopBtn,SIGNAL(clicked()),this,SLOT(stopNIServer()));
 
-    pInitThread = new QThread;
-    pInitWorker = new InitWorker();
-    pInitWorker->moveToThread(pInitThread);
+	// Instead of sub-classing the QThread, we create a worker class, which
+	// has a process to handle all the stuff, as QThread is actually just a wrapper.
+    pServerThread = new QThread;
+    pServerWorker = new ServerWorker();
+    pServerWorker->moveToThread(pServerThread);
 
-    connect(pInitWorker,SIGNAL(initFinished()),this,SLOT(initFinished()));
-    connect(pInitWorker,SIGNAL(licenseChecked(QString)),this,SLOT(licenseChecked(QString)));
-    connect(pInitWorker,SIGNAL(engineFinished()),this,SLOT(engineLaunched()));
-    connect(pInitWorker,SIGNAL(error(QString)),this,SLOT(initFailed(QString)));
+	connect(pServerWorker,SIGNAL(error(QString)),this,SLOT(serverWorkerError(QString)));
 
-    connect(pInitThread,SIGNAL(started()),pInitWorker,SLOT(process()));
-    connect(pInitWorker,SIGNAL(ended()),this,SLOT(serverEnded()));
-    connect(pInitWorker,SIGNAL(ended()),pInitThread,SLOT(quit()));
+    connect(pServerWorker,SIGNAL(initFinished()),this,SLOT(initFinished()));
+    connect(pServerWorker,SIGNAL(licenseChecked(QString)),this,SLOT(licenseChecked(QString)));
+    connect(pServerWorker,SIGNAL(engineFinished()),this,SLOT(engineLaunched()));
+
+    connect(pServerThread,SIGNAL(started()),pServerWorker,SLOT(process()));
+
+    connect(pServerWorker,SIGNAL(ended()),this,SLOT(serverEnded()));
+    connect(pServerWorker,SIGNAL(ended()),pServerThread,SLOT(quit()));
 }
 
 MainWindow::~MainWindow()
@@ -74,7 +78,7 @@ void MainWindow::serverEnded()
     pUi->statusLabel->setText("NIServer completely ended.");
 }
 
-void MainWindow::initFailed(QString str)
+void MainWindow::serverWorkerError(QString str)
 {
     pUi->statusLabel->setText(str);
     pTimer->stop();
@@ -83,19 +87,19 @@ void MainWindow::initFailed(QString str)
 void MainWindow::startNIServer()
 {
     pUi->statusLabel->setText("Checking License...");
-    pInitThread->start();
-    pInitWorker->Init();
+    pServerThread->start();
+    pServerWorker->Init();
 }
 
 void MainWindow::stopNIServer()
 {
     pUi->statusLabel->setText("Stopping server...");
-    pInitWorker->End();
+    pServerWorker->End();
 }
 
 void MainWindow::licenseExpired()
 {
     pTimer->stop();
-    pInitWorker->End();
+    pServerWorker->End();
     pUi->statusLabel->setText("Time's out, license expired! NIServer stopped.");
 }

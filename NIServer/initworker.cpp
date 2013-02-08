@@ -2,18 +2,18 @@
 #include "NIEngine.h"
 #include "tinyThread/tinythread.h"
 
-InitWorker::InitWorker(QObject *parent) :
+ServerWorker::ServerWorker(QObject *parent) :
     QObject(parent)
 {
     curMission = Idle;
 }
 
-InitWorker::~InitWorker()
+ServerWorker::~ServerWorker()
 {
 
 }
 
-QString InitWorker::ConvertLicenseState(NIServer::license_State stat)
+QString ServerWorker::ConvertLicenseState(NIServer::license_State stat)
 {
     QString license;
 
@@ -21,7 +21,7 @@ QString InitWorker::ConvertLicenseState(NIServer::license_State stat)
     switch(stat)
     {
     case NIServer::LICENSE_VALID:
-        license = "Lincense is valid,starting NIEngine...";
+        license = "License is valid,starting NIEngine...";
         break;
 
     case NIServer::LICENSE_INVALID:
@@ -41,7 +41,7 @@ QString InitWorker::ConvertLicenseState(NIServer::license_State stat)
     return license;
 }
 
-void InitWorker::process()
+void ServerWorker::process()
 {
     bool res = false;
     QString license;
@@ -131,7 +131,7 @@ void InitWorker::process()
     emit ended();
 }
 
-void InitWorker::CheckLicense()
+void ServerWorker::CheckLicense()
 {
     // Ideally we should push coming task to a pipeline,here we just
     // simply ignore the command when there is a working task.
@@ -141,7 +141,7 @@ void InitWorker::CheckLicense()
     }
 }
 
-void InitWorker::StartNIService()
+void ServerWorker::StartNIService()
 {
    if(curMission == Idle)
    {
@@ -149,7 +149,7 @@ void InitWorker::StartNIService()
    }
 }
 
-void InitWorker::Init()
+void ServerWorker::Init()
 {
     if(curMission == Idle)
     {
@@ -157,7 +157,7 @@ void InitWorker::Init()
     }
 }
 
-void InitWorker::End()
+void ServerWorker::End()
 {
     if(curMission == Idle)
     {

@@ -19,8 +19,8 @@ public:
 private:
     Ui::MainWindow* pUi;
     QTimer* pTimer;
-    QThread* pInitThread;
-    InitWorker* pInitWorker;
+    QThread* pServerThread;
+    ServerWorker* pServerWorker;
 
 private slots:
     void startNIServer();

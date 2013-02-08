@@ -4,7 +4,7 @@
 #include <QObject>
 #include "NIServer.h"
 
-class InitWorker : public QObject
+class ServerWorker : public QObject
 {
     Q_OBJECT
 
@@ -19,8 +19,8 @@ public:
     };
 
 public:
-    explicit InitWorker(QObject *parent = 0);
-    ~InitWorker();
+    explicit ServerWorker(QObject *parent = 0);
+    ~ServerWorker();
 
 signals:
     void initFinished();
