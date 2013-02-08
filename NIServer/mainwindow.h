@@ -30,7 +30,7 @@ private slots:
     void licenseChecked(QString);
     void engineLaunched();
     void initFinished();
-    void initFailed(QString);
+    void serverWorkerError(QString);
     void serverEnded();
 };
 
