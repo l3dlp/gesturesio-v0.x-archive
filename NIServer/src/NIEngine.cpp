@@ -9,8 +9,7 @@ NIEngine::NIEngine()
 {
     _pUserTracker = NULL;
     _pHandTracker = NULL;
-	_curMission = Idle;
-	_isAlive = false;
+	_curState = Off;
 }
 
 NIEngine::~NIEngine()
@@ -62,54 +61,79 @@ void NIEngine::DestructFilters()
 // Do everything about OpenNI and NiTE in same thread.
 void NIEngine::ProcessData()
 {
-	bool shouldRun = true;
-	bool shouldRead = false;
-	bool inited = false;
-
-	ConstructFilters();
-
-	_isAlive = true;
 	Logger::GetInstance()->Log("NI engine thread running..");
+	
+	ConstructFilters();
+	_curState = Idle;
 
-	while(shouldRun)
+	while(_curState != Off)
 	{
-		switch(_curMission)
+		Mission curMission = DoNothing;
+
+		if (_missions.size() > 0)
 		{
-		case ToInit:
-			inited = InternalInit();
-			shouldRead = true; // Start reading once init
-			_curMission = Idle;
+			curMission = _missions.front();
+			_missions.pop();
+		}
+
+		switch(curMission)
+		{
+		case ToStartSteaming:
+			if (_curState == Idle)
+			{
+				bool res = Init();
+				if (res)
+				{
+					_curState = Streaming;
+				}
+				else
+				{
+					_curState = Err;
+				}
+			}
+			break;
+
+		case ToStopStreaming:
+			if (_curState != Idle)
+			{
+				Finalize();
+				_curState = Idle;
+			}
 			break;
 
 		case ToStartReading:
-			shouldRead = true;
-			Logger::GetInstance()->Log("NI engine start reading");
-			_curMission = Idle;
+			if (_curState == Streaming)
+			{
+				_curState = Reading;
+				Logger::GetInstance()->Log("NI engine start reading");
+			}
+			else
+			{
+				Logger::GetInstance()->Log("There is no valid stream to read.");
+			}
 			break;
 
 		case ToStopReading:
-			shouldRead = false;
-			Logger::GetInstance()->Log("NI engine stop reading");
-			_curMission = Idle;
+			if (_curState == Reading)
+			{
+				_curState = Streaming;
+				Logger::GetInstance()->Log("NI engine stop reading");
+			}
 			break;
 
 		case ToEnd:
-			shouldRead = false;
-			shouldRun = false;
-			InternalFinalize();
-			_curMission = Idle;
+			if (_curState != Idle)
+			{
+				Finalize();
+			}
+			_curState = Off;
 			break;
 
-		case Idle:
 		default:
 			break;
 		}
 
-		// Currently we don't supply feedback to let caller thread
-		// know whether the initialzation is success, so caller thread
-		// might ask to read when initilization is not handled yet.
-		// so we check initialization state here to make sure reading after init.
-		if (shouldRead && inited)
+		if (_curState == Reading)
 		{
 			Read();
 		}
@@ -117,12 +141,11 @@ void NIEngine::ProcessData()
 
 	DestructFilters();
 	Logger::GetInstance()->Log("NI engine thread process ends");
-	_isAlive = false;
 }
 
-bool NIEngine::IsAlive()
+NIEngine::State NIEngine::GetState()
 {
-	return _isAlive;
+	return _curState;
 }
 
 void NIEngine::Read()
@@ -376,20 +399,37 @@ nite::UserId NIEngine::SelectActiveUser(const nite::Array<nite::UserData>& users
     return activeID;
 }
 
-bool NIEngine::Init()
+void NIEngine::Start()
 {
-	if (_curMission == Idle)
-	{
-		_curMission = ToInit;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	Mission cmd = ToStartSteaming;
+	_missions.push(cmd);
 }
 
-bool NIEngine::InternalInit()
+void NIEngine::Stop()
+{
+	Mission cmd = ToStopStreaming;
+	_missions.push(cmd);
+}
+
+void NIEngine::Quit()
+{
+	Mission cmd = ToEnd;
+	_missions.push(cmd);
+}
+
+void NIEngine::StartReading()
+{
+	Mission cmd = ToStartReading;
+	_missions.push(cmd);
+}
+
+void NIEngine::StopReading()
+{
+	Mission cmd = ToStopReading;
+	_missions.push(cmd);
+}
+
+bool NIEngine::Init()
 {
     openni::Status niRc;
     nite::Status niteRc;
@@ -471,20 +511,7 @@ bool NIEngine::InternalInit()
     return true;
 }
 
-bool NIEngine::Finalize()
-{
-	if (_curMission == Idle)
-	{
-		_curMission = ToEnd;
-		return true; // we should also return the real status
-	}
-	else
-	{
-		return false;
-	}
-}
-
-void NIEngine::InternalFinalize()
+void NIEngine::Finalize()
 {
 	Logger::GetInstance()->Log("Start to shutdown OpenNI..");
 
@@ -496,23 +523,6 @@ void NIEngine::InternalFinalize()
 	openni::OpenNI::shutdown();
 
 	Logger::GetInstance()->Log("OpenNI is shutdown.");
-}
-
-void NIEngine::StartReading()
-{
-	// This is not working for now, as init is run async.
-	if (_curMission == Idle)
-	{
-		_curMission = ToStartReading;
-	}
-}
-
-void NIEngine::StopReading()
-{
-	if (_curMission == Idle)
-	{
-		_curMission = ToStopReading;
-	}
 }
 
 void NIEngine::SetProfile(NISkelProfile profile)

@@ -25,9 +25,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	connect(pServerWorker,SIGNAL(error(QString)),this,SLOT(serverWorkerError(QString)));
 
-    connect(pServerWorker,SIGNAL(initFinished()),this,SLOT(initFinished()));
+    connect(pServerWorker,SIGNAL(initialized()),this,SLOT(Initialized()));
     connect(pServerWorker,SIGNAL(licenseChecked(QString)),this,SLOT(licenseChecked(QString)));
-    connect(pServerWorker,SIGNAL(engineFinished()),this,SLOT(engineLaunched()));
+    connect(pServerWorker,SIGNAL(niServiceStateChanged(bool)),this,SLOT(NIServiceStateChanged(bool)));
 
     connect(pServerThread,SIGNAL(started()),pServerWorker,SLOT(process()));
 
@@ -41,7 +41,7 @@ MainWindow::~MainWindow()
     delete pUi;
 }
 
-void MainWindow::initFinished()
+void MainWindow::Initialized()
 {
     pUi->statusLabel->setText("NIEngine launched.Starting Tcp service..");
 
@@ -70,9 +70,16 @@ void MainWindow::licenseChecked(QString stat)
     }
 }
 
-void MainWindow::engineLaunched()
+void MainWindow::NIServiceStateChanged(bool running)
 {
-    pUi->statusLabel->setText("Engine launched.");
+	if (running)
+	{
+		pUi->statusLabel->setText("NI service running...");
+	} 
+	else
+	{
+		pUi->statusLabel->setText("NI service stopped...");
+	}
 }
 
 void MainWindow::serverEnded()

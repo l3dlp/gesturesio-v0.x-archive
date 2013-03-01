@@ -18,9 +18,10 @@ public:
 
 public:
     static bool StartNIService();
-    static void StopNIService();
+    static bool StopNIService();
     static bool StartTcpService();
     static bool StopTcpService();
+	static bool Exit();
 	static bool IsNIRunning();
     static int GetLimitedTime();
     static license_State CheckLicense();

@@ -6,7 +6,6 @@
 ServerWorker::ServerWorker(QObject *parent) :
     QObject(parent)
 {
-    curMission = Idle;
 }
 
 ServerWorker::~ServerWorker()
@@ -47,7 +46,6 @@ void ServerWorker::process()
     bool res = false;
     QString license;
     NIServer::license_State stat;
-    bool shouldRun = true;
 
 	Logger::GetInstance()->Log("Server worker thread process running..");
 
@@ -59,13 +57,16 @@ void ServerWorker::process()
 	tthread::thread niThread(NIEngine::StartThread,param);
 	niThread.detach();
 
-	bool endCmdIssued = false;
+	bool shouldRun = true;
 
     while(shouldRun)
     {
-		if (endCmdIssued == true && NIServer::IsNIRunning() == false)
+		Mission curMission = DoNothing;
+
+		if (_missions.size() > 0)
 		{
-			shouldRun = false;
+			curMission = _missions.front();
+			_missions.pop();
 		}
 
         switch(curMission)
@@ -84,40 +85,52 @@ void ServerWorker::process()
 
                if(res)
                {
-                   emit initFinished();
+                   emit initialized();
                }
                else
                {
                    emit error(QString("Failed to launch engine"));
                }
             }
-			curMission = Idle;
             break;
 
         case ToCheckLicense:
             stat = NIServer::CheckLicense();
             license = ConvertLicenseState(stat);
             emit licenseChecked(license); // Send license message
-			curMission = Idle;
             break;
 
         case ToStartNIService:
             res = NIServer::StartNIService();
             if(res)
             {
-                emit engineFinished();
+                emit niServiceStateChanged(true);
             }
             else
             {
                 emit error(QString("Failed to start NI service"));
             }
-			curMission = Idle;
             break;
 
+		case ToStopNIService:
+			res = NIServer::StopNIService();
+			if (res)
+			{
+				niServiceStateChanged(false);
+			} 
+			else
+			{
+				emit error(QString("Failed to stop NI service"));
+			}
+			break;
+
         case ToEnd:
-			NIServer::StopNIService();
-			endCmdIssued = true;
-			curMission = Idle;
+			res = NIServer::StopNIService();
+			if (res)
+			{
+				shouldRun = false;
+				emit ended();
+			}
             break;
 
         default:
@@ -125,42 +138,35 @@ void ServerWorker::process()
         }
     }
 
-    qDebug("worker ended");
 	Logger::GetInstance()->Log("Server worker thread process ends");
-
-    emit ended();
 }
 
 void ServerWorker::CheckLicense()
 {
-    // Ideally we should push coming task to a pipeline,here we just
-    // simply ignore the command when there is a working task.
-    if(curMission == Idle)
-    {
-        curMission = ToCheckLicense;
-    }
+	Mission cmd = ToCheckLicense;
+	_missions.push(cmd);
 }
 
 void ServerWorker::StartNIService()
 {
-   if(curMission == Idle)
-   {
-       curMission = ToStartNIService;
-   }
+   Mission cmd = ToStartNIService;
+   _missions.push(cmd);
+}
+
+void ServerWorker::StopNIService()
+{
+	Mission cmd = ToStopNIService;
+	_missions.push(cmd);
 }
 
 void ServerWorker::Init()
 {
-    if(curMission == Idle)
-    {
-        curMission = ToInit;
-    }
+	Mission cmd = ToInit;
+	_missions.push(cmd);
 }
 
 void ServerWorker::End()
 {
-    if(curMission == Idle)
-    {
-        curMission = ToEnd;
-    }
+	Mission cmd = ToEnd;
+	_missions.push(cmd);
 }

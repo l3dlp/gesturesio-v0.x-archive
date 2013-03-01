@@ -28,8 +28,8 @@ private slots:
 
     void licenseExpired();
     void licenseChecked(QString);
-    void engineLaunched();
-    void initFinished();
+    void NIServiceStateChanged(bool running);
+    void Initialized();
     void serverWorkerError(QString);
     void serverEnded();
 };

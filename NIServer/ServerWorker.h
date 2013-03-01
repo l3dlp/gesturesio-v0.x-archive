@@ -2,6 +2,7 @@
 #define INITWORKER_H
 
 #include <QObject>
+#include <queue>
 #include "NIServer.h"
 
 class ServerWorker : public QObject
@@ -13,9 +14,10 @@ public:
     {
         ToCheckLicense,
         ToStartNIService,
+		ToStopNIService,
         ToInit,
         ToEnd,
-        Idle
+        DoNothing
     };
 
 public:
@@ -23,9 +25,9 @@ public:
     ~ServerWorker();
 
 signals:
-    void initFinished();
+    void initialized();
     void licenseChecked(QString stat);
-    void engineFinished();
+    void niServiceStateChanged(bool);
     void ended();
     void error(QString err);
 
@@ -33,6 +35,7 @@ public slots:
     void process();
     void CheckLicense();
     void StartNIService();
+	void StopNIService();
     void Init(); // check license and start NI service
     void End();
 
@@ -40,7 +43,7 @@ private:
     QString ConvertLicenseState(NIServer::license_State stat);
 
 private:
-    Mission curMission;
+	std::queue<Mission> _missions;
 };
 
 #endif // INITWORKER_H

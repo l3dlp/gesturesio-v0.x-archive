@@ -1,5 +1,6 @@
 #include <string>
 #include <list>
+#include <queue>
 #include "OpenNI.h"
 #include "NiTE.h"
 #include "OneEuroFilter.h"
@@ -73,15 +74,25 @@ public:
 
 class NIEngine
 {
+public:
+	enum State
+	{
+		Off,       // Engine is not running yet.
+		Idle,      // Ready to process commands.
+		Streaming, // The device starts to stream data
+		Reading,   // The engine starts to read stream
+		Err,       // Some error happens
+	};
 
 private:
 	enum Mission
 	{
-		ToInit,
+		ToStartSteaming,
+		ToStopStreaming,
 		ToStartReading,
 		ToStopReading,
 		ToEnd,
-		Idle
+		DoNothing
 	};
 
     const static int MAX_DISTANCE = 9999;
@@ -98,17 +109,20 @@ private:
 	Point3DFilter* _filters[NUM_OF_SUPPORTED_JOINT];
     std::list<GestureInfo> _gestures;
     uint64_t _latestTs;
-	Mission _curMission;
-	bool _isAlive;
+	std::queue<Mission> _missions;
+	State _curState;
 
 public:
     static NIEngine* GetInstance();
     ~NIEngine();
-	bool Init();
-	bool Finalize();
-	bool IsAlive();
-    void StartReading(); // The loop in reading thread will start reading data.
-    void StopReading();  // The loop in reading thread will stop reading data.
+		
+	void Start();
+	void Stop();
+	void Quit();
+    void StartReading();
+    void StopReading(); 
+	State GetState();
+
     void SetProfile(NISkelProfile profile);
     nite::Point3f GetLeftHandPos();
     nite::Point3f GetRightHandPos();
@@ -121,9 +135,9 @@ public:
 
 private:
     NIEngine();
-	bool InternalInit();
+	bool Init();
+	void Finalize();
 	void Read();
-	void InternalFinalize();
     void ProcessData();
     nite::UserId SelectActiveUser(const nite::Array<nite::UserData>& users);
     void ManageTracker(const nite::Array<nite::UserData>& users, nite::UserId activeID);

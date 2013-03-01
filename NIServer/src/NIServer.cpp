@@ -145,37 +145,101 @@ bool NIServer::StopTcpService()
 
 bool NIServer::StartNIService()
 {
-    bool res = true;
+	bool res = true;
 
     if(isNIServing == false)
     {
         NIEngine::GetInstance()->SetProfile(SKEL_PROFILE_HANDS_AND_HEAD);
-        res = NIEngine::GetInstance()->Init();
-        if(res)
-        {
-            NIEngine::GetInstance()->StartReading();
-            isNIServing = true;
-			HttpRequest(logIn.c_str());  // Consumes lots of time.
-        }
+        NIEngine::GetInstance()->Start();
+
+		// Pooling to check if initialized successfully.
+		NIEngine::State state;
+
+		do 
+		{
+			state = NIEngine::GetInstance()->GetState();
+
+		} while (state != NIEngine::Streaming && state != NIEngine::Err);
+
+		if (state == NIEngine::Streaming)
+		{
+			NIEngine::GetInstance()->StartReading();
+			isNIServing = true;
+			//HttpRequest(logIn.c_str());  // Comment out for now, as it consumes lots of time.
+		}
+		else
+		{
+			res = false;
+		}
     }
 
     return res;
 }
 
-void NIServer::StopNIService()
+bool NIServer::StopNIService()
 {
+	bool res = true;
+
 	if (isNIServing == true)
 	{
-		bool res = NIEngine::GetInstance()->Finalize();
-		if (res == true)
+		NIEngine::GetInstance()->Stop();
+		// Pooling to check if initialized successfully.
+		NIEngine::State state;
+
+		do 
+		{
+			state = NIEngine::GetInstance()->GetState();
+
+		} while (state != NIEngine::Idle && state != NIEngine::Err);
+
+		if (state == NIEngine::Idle)
 		{
 			isNIServing = false;
-			HttpRequest(logOut.c_str()); // Consumes lots of time.
+		}
+		else
+		{
+			res = false;
 		}
 	}
+
+	return res;
+}
+
+bool NIServer::Exit()
+{
+	bool res = true;
+
+	NIEngine::GetInstance()->Quit();
+	// Pooling to check if initialized successfully.
+	NIEngine::State state;
+
+	do 
+	{
+		state = NIEngine::GetInstance()->GetState();
+
+	} while (state != NIEngine::Off && state != NIEngine::Err);
+
+	if (state == NIEngine::Idle)
+	{
+		//HttpRequest(logOut.c_str());  // Comment out for now, as it consumes lots of time.
+	}
+	else
+	{
+		res = false;
+	}
+
+	return res;
 }
 
 bool NIServer::IsNIRunning()
 {
-	return NIEngine::GetInstance()->IsAlive();
+	bool isRunning = false;
+
+	NIEngine::State state = NIEngine::GetInstance()->GetState();
+	if (state == NIEngine::Reading)
+	{
+		isRunning = true;
+	}
+	
+	return isRunning;
 }
