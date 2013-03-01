@@ -65,9 +65,6 @@
     <ClCompile Include="src\vjson\block_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="initworker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\vjson\json.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -92,17 +89,20 @@
     <ClCompile Include="Release\moc_NITcpServer.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="Debug\moc_initworker.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="Release\moc_initworker.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="Debug\moc_mainwindow.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Release\moc_mainwindow.cpp">
       <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="Debug\moc_ServerWorker.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Release\moc_ServerWorker.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerWorker.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -196,9 +196,6 @@
     <ClInclude Include="Include\expat\expat_external.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <CustomBuild Include="initworker.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
     <ClInclude Include="Include\vjason\json.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -220,6 +217,9 @@
     <ClInclude Include="Include\curl\typecheck-gcc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <CustomBuild Include="ServerWorker.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.ui">

@@ -1,4 +1,4 @@
-#include "initworker.h"
+#include "ServerWorker.h"
 #include "NIEngine.h"
 #include "tinyThread/tinythread.h"
 #include "Utils.h"
