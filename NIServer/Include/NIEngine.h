@@ -1,9 +1,19 @@
+/*****************************************************************************
+*                                                                            *
+*  NIServer                                                                  *
+*  Copyright (C) 2013 MediaStanza Ltd.                                       *
+*                                                                            *
+*  This file is part of NIServer                                             *
+*                                                                            *
+*****************************************************************************/
+
 #include <string>
 #include <list>
 #include <queue>
 #include "OpenNI.h"
 #include "NiTE.h"
 #include "OneEuroFilter.h"
+
 
 typedef enum
 {
@@ -72,16 +82,25 @@ public:
 	}
 };
 
+
+//! A singleton class wrapping OpenNI and NiTE's capability.
+/*! It encapsulates all processes into a main procedure, which
+ * can be run in single thread.
+ * The main procedure can parse different commands and switch
+ * to different states accordingly.
+ */
 class NIEngine
 {
 public:
+
+     ///  Engine's running state. 
 	enum State
 	{
-		Off,       // Engine is not running yet.
-		Idle,      // Ready to process commands.
-		Streaming, // The device starts to stream data
-		Reading,   // The engine starts to read stream
-		Err,       // Some error happens
+		Off,       //!< Engine is not running yet(main thread loop not entered).
+		Idle,      //!< Ready to process commands.
+		Streaming, //!< The engine is streaming data.
+		Reading,   //!< The engine is reading data.
+		Err,       //!< Some error happens
 	};
 
 private:
@@ -113,25 +132,25 @@ private:
 	State _curState;
 
 public:
-    static NIEngine* GetInstance();
+    static NIEngine* GetInstance(); //!< Get single instance.
     ~NIEngine();
 		
-	void Start();
-	void Stop();
-	void Quit();
-    void StartReading();
-    void StopReading(); 
-	State GetState();
+	void Start();        //!< Start the engine,which will start to produce required data.
+	void Stop();         //!< Stop the engine by stopping producing data.
+	void Quit();         //!< Quit the engine's loop and release all resources.
+    void StartReading(); //!< Start to read produced data.
+    void StopReading();  //!< Stop reading produced data.
+	State GetState();    //!< Read engine's current running state.
 
-    void SetProfile(NISkelProfile profile);
-    nite::Point3f GetLeftHandPos();
-    nite::Point3f GetRightHandPos();
-    nite::Point3f GetLeftHandPosProjective();
-    nite::Point3f GetRightHandPosProjective();
-    nite::Point3f GetHeadPosProjective();
-    nite::Point3f GetHeadPos();
-    std::string GetGesture();
-	static void StartThread(void* arg);
+    void SetProfile(NISkelProfile profile);    //!< Set skeleton profile, to decide which joints to be tracked.
+    nite::Point3f GetLeftHandPos();            //!< Get left hand's real world position
+    nite::Point3f GetRightHandPos();           //!< Get right hand's real world position.
+    nite::Point3f GetLeftHandPosProjective();  //!< Get left hand's projective position.
+    nite::Point3f GetRightHandPosProjective(); //!< Get right hand's projective position.
+    nite::Point3f GetHeadPosProjective();      //!< Get head's projective position.
+    nite::Point3f GetHeadPos();                //!< Get head's real world position.
+    std::string GetGesture();                  //!< Get tracked gestures.
+	static void MainProc(void* arg);           //!< Main procedure for dedicated thread.
 
 private:
     NIEngine();

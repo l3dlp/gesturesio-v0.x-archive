@@ -5,26 +5,28 @@
 
 using namespace std;
 
+//! A singleton class that provides services including NI and Tcp.
 class NIServer
 {
 public:
+	//! License state
     enum license_State
     {
-        LICENSE_INVALID = 0,    // Invalid license
-        LICENSE_VALID,          // Valid license
-        LICENSE_TIMELIMITED,    // Valid license but with time limitation
-        LICENSE_UNKNOWN         // Some errors might occur during the license validation
+        LICENSE_INVALID = 0,    //!< Invalid license
+        LICENSE_VALID,          //!< Valid license
+        LICENSE_TIMELIMITED,    //!< Valid license but with time limitation
+        LICENSE_UNKNOWN         //!< Some errors might occur during the license validation
     };
 
 public:
-    static bool StartNIService();
-    static bool StopNIService();
-    static bool StartTcpService();
-    static bool StopTcpService();
-	static bool Exit();
-	static bool IsNIRunning();
-    static int GetLimitedTime();
-    static license_State CheckLicense();
+    static bool StartNIService();         //!< Start Nature Interaction service.
+    static bool StopNIService();          //!< Stop Nature Interaction service.
+    static bool StartTcpService();        //!< Start Tcp service.
+    static bool StopTcpService();         //!< Stop Tcp service.
+	static bool Exit();                   //!< Quit server.
+	static bool IsNIRunning();            //!< To see if server is running.
+    static int GetLimitedTime();          //!< Get limited license's valid time.
+    static license_State CheckLicense();  //!< Check if license is valid.
 
 private:
     NIServer();

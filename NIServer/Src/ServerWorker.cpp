@@ -54,7 +54,7 @@ void ServerWorker::process()
 	// Ideally the worker should not know NIEngine except NIServer...
 	THREADSTRUCT* param = new THREADSTRUCT;
 	param->_this = NIEngine::GetInstance();
-	tthread::thread niThread(NIEngine::StartThread,param);
+	tthread::thread niThread(NIEngine::MainProc,param);
 	niThread.detach();
 
 	bool shouldRun = true;

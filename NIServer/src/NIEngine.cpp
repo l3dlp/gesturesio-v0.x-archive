@@ -27,7 +27,7 @@ NIEngine* NIEngine::GetInstance()
     return _instance;
 }
 
-void NIEngine::StartThread(void* arg)
+void NIEngine::MainProc(void* arg)
 {
     THREADSTRUCT* ts = (THREADSTRUCT*)arg;
     ts->_this->ProcessData();
