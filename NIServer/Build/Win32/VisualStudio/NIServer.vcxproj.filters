@@ -1,0 +1,256 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Form Files">
+      <UniqueIdentifier>{99349809-55BA-4b9d-BF79-8FDBB0286EB3}</UniqueIdentifier>
+      <Extensions>ui</Extensions>
+      <ParseFiles>false</ParseFiles>
+    </Filter>
+    <Filter Include="Form Files">
+      <UniqueIdentifier>{99349809-55BA-4b9d-BF79-8FDBB0286EB3}</UniqueIdentifier>
+      <Extensions>ui</Extensions>
+      <ParseFiles>false</ParseFiles>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;moc;h;def;odl;idl;res;</Extensions>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;moc;h;def;odl;idl;res;</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Generated Files\Debug">
+      <UniqueIdentifier>{54e47829-7b72-4805-ae9d-14990d6513df}</UniqueIdentifier>
+      <Extensions>cpp;moc</Extensions>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+    <Filter Include="Generated Files\Release">
+      <UniqueIdentifier>{97c49f41-f33c-47c0-96b4-98ebc4040937}</UniqueIdentifier>
+      <Extensions>cpp;moc</Extensions>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+    <Filter Include="Source Files\TinyThread">
+      <UniqueIdentifier>{002a7c33-9b93-4ffb-bea1-36ec9d01b8ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\vjason">
+      <UniqueIdentifier>{36101635-1b7a-4c0c-8236-c185e73d9907}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OpenNI">
+      <UniqueIdentifier>{8f555d07-cd5b-414e-bfe5-9150a106a36f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\NiTE">
+      <UniqueIdentifier>{5295b4b3-d620-48b3-a94e-2e1e37859272}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\curl">
+      <UniqueIdentifier>{3082c910-028a-4f67-a7b3-b2abb1ee4706}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\expat">
+      <UniqueIdentifier>{43632ee1-dbcf-4f73-98c7-3dd77e8d5434}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\TinyThread">
+      <UniqueIdentifier>{a46ac991-66ed-42b1-a2f5-2afb938634e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\vjason">
+      <UniqueIdentifier>{46904014-4f44-4254-a7ef-9ff9304a2c1d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\..\Src\mainwindow.ui">
+      <Filter>Form Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\Include\CmdParser.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\Include\mainwindow.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\Include\NITcpServer.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\..\Include\ServerWorker.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GeneratedFiles\ui_mainwindow.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Include\NIEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Include\NIServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Include\OneEuroFilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Include\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\curl\curl.h">
+      <Filter>Header Files\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\curl\curlbuild.h">
+      <Filter>Header Files\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\curl\curlrules.h">
+      <Filter>Header Files\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\curl\curlver.h">
+      <Filter>Header Files\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\curl\easy.h">
+      <Filter>Header Files\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\curl\mprintf.h">
+      <Filter>Header Files\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\curl\multi.h">
+      <Filter>Header Files\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\curl\stdcheaders.h">
+      <Filter>Header Files\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\curl\typecheck-gcc.h">
+      <Filter>Header Files\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\expat\expat.h">
+      <Filter>Header Files\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\expat\expat_external.h">
+      <Filter>Header Files\expat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\vjason\block_allocator.h">
+      <Filter>Header Files\vjason</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\vjason\json.h">
+      <Filter>Header Files\vjason</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\TinyThread\tinythread.h">
+      <Filter>Header Files\TinyThread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\nite\NiTE.h">
+      <Filter>Header Files\NiTE</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\nite\NiteCAPI.h">
+      <Filter>Header Files\NiTE</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\nite\NiteCEnums.h">
+      <Filter>Header Files\NiTE</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\nite\NiteCTypes.h">
+      <Filter>Header Files\NiTE</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\nite\NiteEnums.h">
+      <Filter>Header Files\NiTE</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\nite\NiteVersion.h">
+      <Filter>Header Files\NiTE</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\OniCAPI.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\OniCEnums.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\OniCProperties.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\OniCTypes.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\OniEnums.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\OniPlatform.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\OniProperties.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\OniVersion.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\OpenNI.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\ThirdParty\Include\openni\PS1080.h">
+      <Filter>Header Files\OpenNI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Src\CmdParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Src\mainwindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Src\NIEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Src\NIServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Src\NITcpServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Src\ServerWorker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Src\Utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_CmdParser.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_CmdParser.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_mainwindow.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_mainwindow.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_NITcpServer.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_NITcpServer.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_ServerWorker.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_ServerWorker.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ThirdParty\Src\TinyThread\tinythread.cpp">
+      <Filter>Source Files\TinyThread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ThirdParty\Src\vjson\block_allocator.cpp">
+      <Filter>Source Files\vjason</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\ThirdParty\Src\vjson\json.cpp">
+      <Filter>Source Files\vjason</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
