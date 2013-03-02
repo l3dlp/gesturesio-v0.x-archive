@@ -2,6 +2,7 @@
 #include "NIEngine.h"
 #include "tinyThread/tinythread.h"
 #include "Utils.h"
+#include <time.h>
 
 NIEngine* NIEngine::_instance = 0;
 
@@ -435,6 +436,10 @@ bool NIEngine::Init()
     nite::Status niteRc;
 	
 	Logger::GetInstance()->Log("Start to init NI engine");
+
+	//clock_t tBegin = clock();
+	//clock_t tEnd = clock();
+	//double time = double(tEnd - tBegin)/CLOCKS_PER_SEC;
 
 	try
 	{

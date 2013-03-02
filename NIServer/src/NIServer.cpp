@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <stack>
+#include <time.h>
 #include "NIEngine.h"
 #include "Utils.h"
 #include "NIServer.h"
@@ -40,6 +41,8 @@ NIServer::license_State NIServer::ValidateLicense(string keyword)
 
 	Logger::GetInstance()->Log("Validating license: " + keyword);
 
+	//clock_t tBegin = clock();
+
 	// call URL
 	string url = "https://api.activedooh.com/v1/" + keyword + "/status.xml";
 	string response = HttpRequest(url.c_str());
@@ -63,6 +66,14 @@ NIServer::license_State NIServer::ValidateLicense(string keyword)
             }
         }
     }
+
+	//clock_t tEnd = clock();
+	//double time = (double(tEnd - tBegin)/CLOCKS_PER_SEC);
+
+	//char buff[50];
+	//sprintf(buff,"license validated in %f seconds.", time);
+	//string timereport = buff;
+	//Logger::GetInstance()->Log(timereport);
 
     return licenseStat;
 }
