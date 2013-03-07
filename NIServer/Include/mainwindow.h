@@ -26,12 +26,10 @@ private slots:
     void startNIServer();
     void stopNIServer();
 
+    void workerLicenseChecked(QString);
+	void workerThreadRunning();
+
     void licenseExpired();
-    void licenseChecked(QString);
-    void NIServiceStateChanged(bool running);
-    void Initialized();
-    void serverWorkerError(QString);
-    void serverEnded();
 };
 
 #endif // MAINWINDOW_H

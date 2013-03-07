@@ -166,6 +166,7 @@ bool NIServer::StartNIService()
 		// Pooling to check if initialized successfully.
 		NIEngine::State state;
 
+		// TODO: use callback to remove blocking
 		do 
 		{
 			state = NIEngine::GetInstance()->GetState();
@@ -197,6 +198,7 @@ bool NIServer::StopNIService()
 		// Pooling to check if initialized successfully.
 		NIEngine::State state;
 
+		// TODO: use callback to remove blocking
 		do 
 		{
 			state = NIEngine::GetInstance()->GetState();
@@ -224,6 +226,7 @@ bool NIServer::Exit()
 	// Pooling to check if initialized successfully.
 	NIEngine::State state;
 
+	// TODO: use callback to remove blocking
 	do 
 	{
 		state = NIEngine::GetInstance()->GetState();
@@ -240,17 +243,4 @@ bool NIServer::Exit()
 	}
 
 	return res;
-}
-
-bool NIServer::IsNIRunning()
-{
-	bool isRunning = false;
-
-	NIEngine::State state = NIEngine::GetInstance()->GetState();
-	if (state == NIEngine::Reading)
-	{
-		isRunning = true;
-	}
-	
-	return isRunning;
 }

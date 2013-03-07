@@ -43,130 +43,25 @@ QString ServerWorker::ConvertLicenseState(NIServer::license_State stat)
 
 void ServerWorker::process()
 {
-    bool res = false;
-    QString license;
-    NIServer::license_State stat;
-
 	Logger::GetInstance()->Log("Server worker thread process running..");
 
-	// Create a dedicated thread to handle data reading.
-	// The reason to do it here is to keep the thread reference before thread is joint.
-	// Ideally the worker should not know NIEngine except NIServer...
-	THREADSTRUCT* param = new THREADSTRUCT;
-	param->_this = NIEngine::GetInstance();
-	tthread::thread niThread(NIEngine::MainProc,param);
-	niThread.detach();
+	// Check license
+	NIServer::license_State stat = NIServer::CheckLicense();
+	QString license = ConvertLicenseState(stat);
+	Logger::GetInstance()->Log("License state: " + license.toStdString());
+	emit licenseChecked(license); // Report license message
 
-	bool shouldRun = true;
-
-    while(shouldRun)
-    {
-		Mission curMission = DoNothing;
-
-		if (_missions.size() > 0)
-		{
-			curMission = _missions.front();
-			_missions.pop();
-		}
-
-        switch(curMission)
-        {
-        case ToInit:
-            // Check license
-            stat = NIServer::CheckLicense();
-            license = ConvertLicenseState(stat);
-			Logger::GetInstance()->Log("License state: " + license.toStdString());
-            emit licenseChecked(license); // Send license message
-
-            // Start Engine
-            if(stat == NIServer::LICENSE_VALID || stat == NIServer::LICENSE_TIMELIMITED)
-            {
-               res = NIServer::StartNIService();
-
-               if(res)
-               {
-                   emit initialized();
-               }
-               else
-               {
-                   emit error(QString("Failed to launch engine"));
-               }
-            }
-            break;
-
-        case ToCheckLicense:
-            stat = NIServer::CheckLicense();
-            license = ConvertLicenseState(stat);
-            emit licenseChecked(license); // Send license message
-            break;
-
-        case ToStartNIService:
-            res = NIServer::StartNIService();
-            if(res)
-            {
-                emit niServiceStateChanged(true);
-            }
-            else
-            {
-                emit error(QString("Failed to start NI service"));
-            }
-            break;
-
-		case ToStopNIService:
-			res = NIServer::StopNIService();
-			if (res)
-			{
-				niServiceStateChanged(false);
-			} 
-			else
-			{
-				emit error(QString("Failed to stop NI service"));
-			}
-			break;
-
-        case ToEnd:
-			res = NIServer::StopNIService();
-			if (res)
-			{
-				shouldRun = false;
-				emit ended();
-			}
-            break;
-
-        default:
-            break;
-        }
-    }
+	if (stat == NIServer::LICENSE_VALID || stat == NIServer::LICENSE_TIMELIMITED)
+	{
+		// Create a dedicated data reading thread. We will wait until it ends.
+		// We do this in worker thread to avoid blocking main thread(the UI).
+		// Ideally the worker should not know NIEngine except NIServer, for now we put it here.
+		THREADSTRUCT* param = new THREADSTRUCT;
+		param->_this = NIEngine::GetInstance();
+		tthread::thread niThread(NIEngine::MainProc,param);
+		emit threadRunning();
+		niThread.join();
+	}
 
 	Logger::GetInstance()->Log("Server worker thread process ends");
-}
-
-void ServerWorker::CheckLicense()
-{
-	Mission cmd = ToCheckLicense;
-	_missions.push(cmd);
-}
-
-void ServerWorker::StartNIService()
-{
-   Mission cmd = ToStartNIService;
-   _missions.push(cmd);
-}
-
-void ServerWorker::StopNIService()
-{
-	Mission cmd = ToStopNIService;
-	_missions.push(cmd);
-}
-
-void ServerWorker::Init()
-{
-	Mission cmd = ToInit;
-	_missions.push(cmd);
-}
-
-void ServerWorker::End()
-{
-	Mission cmd = ToEnd;
-	_missions.push(cmd);
 }

@@ -24,7 +24,6 @@ public:
     static bool StartTcpService();        //!< Start Tcp service.
     static bool StopTcpService();         //!< Stop Tcp service.
 	static bool Exit();                   //!< Quit server.
-	static bool IsNIRunning();            //!< To see if server is running.
     static int GetLimitedTime();          //!< Get limited license's valid time.
     static license_State CheckLicense();  //!< Check if license is valid.
 
