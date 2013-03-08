@@ -70,11 +70,12 @@ bool ParseXml(string str, vector<XmlElement>& elements)
         XML_SetCharacterDataHandler(p, char_hndl);
 
         elemVector.clear();
-        res = XML_Parse(p, str.c_str(), str.size(), true);
-        if(res)
-        {
-            elements = elemVector;
-        }
+        XML_Status status = XML_Parse(p, str.c_str(), str.size(), true);
+		if (status == XML_STATUS_OK)
+		{
+			elements = elemVector;
+			res = true;
+		}
     }
 
     return res;

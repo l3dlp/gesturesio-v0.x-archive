@@ -63,9 +63,9 @@ public:
 
 		if (isEnabled == true)
 		{
-			filteredPoint.x = filterX(point.x,timeStamp);
-			filteredPoint.y = filterY(point.y,timeStamp);
-			filteredPoint.z = filterZ(point.z,timeStamp);
+			filteredPoint.x = (float)filterX(point.x,timeStamp);
+			filteredPoint.y = (float)filterY(point.y,timeStamp);
+			filteredPoint.z = (float)filterZ(point.z,timeStamp);
 		}
 		else
 		{
