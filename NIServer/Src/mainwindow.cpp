@@ -76,7 +76,8 @@ void MainWindow::stopNIServer()
 	pUi->statusLabel->setText("Stopping TCP service...");
 	NIServer::StopTcpService();
     pUi->statusLabel->setText("TCP service ended.Stopping NI service...");
-    NIServer::StopNIService();
+    //NIServer::StopNIService();
+	NIServer::EndNIService(); // Can't start again.
 	pUi->statusLabel->setText("NI Server completely ended.");
 }
 

@@ -154,93 +154,45 @@ bool NIServer::StopTcpService()
     return true;
 }
 
-bool NIServer::StartNIService()
+void NIServer::NIServiceStarted(bool success)
 {
-	bool res = true;
+	if (success)
+	{
+		NIEngine::GetInstance()->StartReading();
+		isNIServing = true;
+		HttpRequest(logIn.c_str());
+	}
+}
 
+void NIServer::StartNIService()
+{
     if(isNIServing == false)
     {
         NIEngine::GetInstance()->SetProfile(SKEL_PROFILE_HANDS_AND_HEAD);
-        NIEngine::GetInstance()->Start();
-
-		// Pooling to check if initialized successfully.
-		NIEngine::State state;
-
-		// TODO: use callback to remove blocking
-		do 
-		{
-			state = NIEngine::GetInstance()->GetState();
-
-		} while (state != NIEngine::Streaming && state != NIEngine::Err);
-
-		if (state == NIEngine::Streaming)
-		{
-			NIEngine::GetInstance()->StartReading();
-			isNIServing = true;
-			//HttpRequest(logIn.c_str());  // Comment out for now, as it consumes lots of time.
-		}
-		else
-		{
-			res = false;
-		}
+        NIEngine::GetInstance()->Start(NIServiceStarted);
     }
-
-    return res;
 }
 
-bool NIServer::StopNIService()
+void NIServer::NIServiceStopped()
 {
-	bool res = true;
+	isNIServing = false;
+}
 
+void NIServer::StopNIService()
+{
 	if (isNIServing == true)
 	{
-		NIEngine::GetInstance()->Stop();
-		// Pooling to check if initialized successfully.
-		NIEngine::State state;
-
-		// TODO: use callback to remove blocking
-		do 
-		{
-			state = NIEngine::GetInstance()->GetState();
-
-		} while (state != NIEngine::Idle && state != NIEngine::Err);
-
-		if (state == NIEngine::Idle)
-		{
-			isNIServing = false;
-		}
-		else
-		{
-			res = false;
-		}
+		NIEngine::GetInstance()->Stop(NIServiceStopped);
 	}
-
-	return res;
 }
 
-bool NIServer::Exit()
+void NIServer::NIServiceEnded()
 {
-	bool res = true;
+	isNIServing = false;
+	HttpRequest(logOut.c_str());
+}
 
-	NIEngine::GetInstance()->Quit();
-	// Pooling to check if initialized successfully.
-	NIEngine::State state;
-
-	// TODO: use callback to remove blocking
-	do 
-	{
-		state = NIEngine::GetInstance()->GetState();
-
-	} while (state != NIEngine::Off && state != NIEngine::Err);
-
-	if (state == NIEngine::Idle)
-	{
-		//HttpRequest(logOut.c_str());  // Comment out for now, as it consumes lots of time.
-	}
-	else
-	{
-		res = false;
-	}
-
-	return res;
+void NIServer::EndNIService()
+{
+	NIEngine::GetInstance()->End(NIServiceEnded);
 }

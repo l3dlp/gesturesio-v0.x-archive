@@ -91,6 +91,8 @@ void NIEngine::ProcessData()
 				{
 					_curState = Err;
 				}
+
+				pStartedHandler(res); // Report caller.
 			}
 			break;
 
@@ -99,6 +101,7 @@ void NIEngine::ProcessData()
 			{
 				Finalize();
 				_curState = Idle;
+				pStoppedHandler(); // Report caller.
 			}
 			break;
 
@@ -141,6 +144,7 @@ void NIEngine::ProcessData()
 	}
 
 	DestructFilters();
+	pEndedHandler(); // Report caller.
 	Logger::GetInstance()->Log("NI engine thread process ends");
 }
 
@@ -400,20 +404,23 @@ nite::UserId NIEngine::SelectActiveUser(const nite::Array<nite::UserData>& users
     return activeID;
 }
 
-void NIEngine::Start()
+void NIEngine::Start(void (*pHandler)(bool))
 {
+	pStartedHandler = pHandler;
 	Mission cmd = ToStartSteaming;
 	_missions.push(cmd);
 }
 
-void NIEngine::Stop()
+void NIEngine::Stop(void (*pHandler)())
 {
+	pStoppedHandler = pHandler;
 	Mission cmd = ToStopStreaming;
 	_missions.push(cmd);
 }
 
-void NIEngine::Quit()
+void NIEngine::End(void (*pHandler)())
 {
+	pEndedHandler = pHandler;
 	Mission cmd = ToEnd;
 	_missions.push(cmd);
 }

@@ -19,11 +19,21 @@ public:
     };
 
 public:
-    static bool StartNIService();         //!< Start Nature Interaction service.
-    static bool StopNIService();          //!< Stop Nature Interaction service.
+	/// Start Nature Interaction service.
+	/// @note It's non-blocking.
+    static void StartNIService();       
+	
+	/// Stop Nature Interaction service.
+	/// @note It's non-blocking.
+    static void StopNIService();   
+
+	/// End Nature Interaction service.
+	/// @note It's non-blocking. The thread process will exit.
+	static void EndNIService();   
+
     static bool StartTcpService();        //!< Start Tcp service.
-    static bool StopTcpService();         //!< Stop Tcp service.
-	static bool Exit();                   //!< Quit server.
+    static bool StopTcpService();         //!< Stop Tcp service.  
+
     static int GetLimitedTime();          //!< Get limited license's valid time.
     static license_State CheckLicense();  //!< Check if license is valid.
 
@@ -33,6 +43,10 @@ private:
 
     static string ReadLicense(char* fileName);
     static license_State ValidateLicense(string keyword);
+
+	static void NIServiceStarted(bool);  // NI service started callback handler.
+	static void NIServiceStopped();      // NI service stopped callback handler.
+	static void NIServiceEnded();        // NI service ended callback handler.
 
 private:
     const static int PORT = 6789;

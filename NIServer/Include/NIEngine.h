@@ -130,17 +130,20 @@ private:
     uint64_t _latestTs;
 	std::queue<Mission> _missions;
 	State _curState;
+	void (*pStartedHandler)(bool);
+	void (*pStoppedHandler)();
+	void (*pEndedHandler)();
 
 public:
     static NIEngine* GetInstance(); //!< Get single instance.
     ~NIEngine();
 		
-	void Start();        //!< Start the engine,which will start to produce required data.
-	void Stop();         //!< Stop the engine by stopping producing data.
-	void Quit();         //!< Quit the engine's loop and release all resources.
-    void StartReading(); //!< Start to read produced data.
-    void StopReading();  //!< Stop reading produced data.
-	State GetState();    //!< Read engine's current running state.
+	void Start(void (*pHandler)(bool));    //!< Start the engine,which will start to produce required data.
+	void Stop(void (*pHandler)());         //!< Stop the engine by stopping producing data.
+	void End(void (*pHandler)());         //!< Quit the engine's loop and release all resources.
+    void StartReading();                   //!< Start to read produced data.
+    void StopReading();                    //!< Stop reading produced data.
+	State GetState();                      //!< Read engine's current running state.
 
     void SetProfile(NISkelProfile profile);    //!< Set skeleton profile, to decide which joints to be tracked.
     nite::Point3f GetLeftHandPos();            //!< Get left hand's real world position
