@@ -4,6 +4,12 @@
 #include "Utils.h"
 #include <time.h>
 
+typedef struct
+{
+	NIEngine* _this;
+
+}THREADSTRUCT;
+
 NIEngine* NIEngine::_instance = 0;
 
 NIEngine::NIEngine()
@@ -435,6 +441,14 @@ void NIEngine::StopReading()
 {
 	Mission cmd = ToStopReading;
 	_missions.push(cmd);
+}
+
+void NIEngine::RunThread()
+{
+	THREADSTRUCT* param = new THREADSTRUCT;
+	param->_this = this;
+	tthread::thread niThread(MainProc,param);
+	niThread.join();
 }
 
 bool NIEngine::Init()

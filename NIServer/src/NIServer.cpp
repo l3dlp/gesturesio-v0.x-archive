@@ -16,6 +16,7 @@ string NIServer::clientIn = "";
 string NIServer::clientOut = "";
 
 int NIServer::limitedTime = 0;
+bool NIServer::isNIServiceThreadRunning = false;
 bool NIServer::isNIServing = false;
 bool NIServer::isTcpServing = false;
 NITcpServer* NIServer::pTcpServer = NULL;
@@ -154,6 +155,12 @@ bool NIServer::StopTcpService()
     return true;
 }
 
+void NIServer::RunNIServiceThread()
+{
+	isNIServiceThreadRunning = true;
+	NIEngine::GetInstance()->RunThread();
+}
+
 void NIServer::NIServiceStarted(bool success)
 {
 	if (success)
@@ -166,7 +173,7 @@ void NIServer::NIServiceStarted(bool success)
 
 void NIServer::StartNIService()
 {
-    if(isNIServing == false)
+    if(isNIServing == false && isNIServiceThreadRunning == true)
     {
         NIEngine::GetInstance()->SetProfile(SKEL_PROFILE_HANDS_AND_HEAD);
         NIEngine::GetInstance()->Start(NIServiceStarted);
@@ -194,5 +201,8 @@ void NIServer::NIServiceEnded()
 
 void NIServer::EndNIService()
 {
-	NIEngine::GetInstance()->End(NIServiceEnded);
+	if (isNIServing == true)
+	{
+		NIEngine::GetInstance()->End(NIServiceEnded);
+	}
 }

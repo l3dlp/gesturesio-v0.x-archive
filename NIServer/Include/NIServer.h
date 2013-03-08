@@ -19,6 +19,11 @@ public:
     };
 
 public:
+	/// Create thread to handle Nature Interaction service.
+	/// @note It's blocking, will end until the thread ends.
+	/// @note Should be called before starting NI service.
+	static void RunNIServiceThread();
+
 	/// Start Nature Interaction service.
 	/// @note It's non-blocking.
     static void StartNIService();       
@@ -52,6 +57,7 @@ private:
     const static int PORT = 6789;
 
     static int limitedTime;
+	static bool isNIServiceThreadRunning;
     static bool isNIServing;
     static bool isTcpServing;
     static NITcpServer* pTcpServer;

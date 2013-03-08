@@ -55,12 +55,8 @@ void ServerWorker::process()
 	{
 		// Create a dedicated data reading thread. We will wait until it ends.
 		// We do this in worker thread to avoid blocking main thread(the UI).
-		// Ideally the worker should not know NIEngine except NIServer, for now we put it here.
-		THREADSTRUCT* param = new THREADSTRUCT;
-		param->_this = NIEngine::GetInstance();
-		tthread::thread niThread(NIEngine::MainProc,param);
 		emit threadRunning();
-		niThread.join();
+		NIServer::RunNIServiceThread();
 	}
 
 	Logger::GetInstance()->Log("Server worker thread process ends");

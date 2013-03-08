@@ -140,10 +140,14 @@ public:
 		
 	void Start(void (*pHandler)(bool));    //!< Start the engine,which will start to produce required data.
 	void Stop(void (*pHandler)());         //!< Stop the engine by stopping producing data.
-	void End(void (*pHandler)());         //!< Quit the engine's loop and release all resources.
+	void End(void (*pHandler)());          //!< Quit the engine's loop and release all resources.
     void StartReading();                   //!< Start to read produced data.
     void StopReading();                    //!< Stop reading produced data.
 	State GetState();                      //!< Read engine's current running state.
+
+	/// Run the thread to handle incoming missions.
+	/// @note It's blocking, will wait until the thread ends.
+	void RunThread();                      
 
     void SetProfile(NISkelProfile profile);    //!< Set skeleton profile, to decide which joints to be tracked.
     nite::Point3f GetLeftHandPos();            //!< Get left hand's real world position
@@ -171,9 +175,3 @@ private:
 	void ConstructFilters();
 	void DestructFilters();
 };
-
-typedef struct
-{
-    NIEngine* _this;
-
-}THREADSTRUCT;
