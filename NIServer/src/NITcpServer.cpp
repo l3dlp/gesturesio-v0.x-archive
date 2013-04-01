@@ -65,8 +65,9 @@ void NITcpServer::startWrite(QString echo)
 	Logger::GetInstance()->Log("feedback to client:\n" + echo.toStdString());
 
     if(client != NULL)
-        client->write(echo.toAscii(),echo.length());
-
+	{
+        client->write(echo.toAscii(),echo.length()+1); // +1 to include a null character
+	}
     //qDebug("%d %s",echo.length(),echo.toAscii());
 }
 
