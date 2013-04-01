@@ -42,6 +42,8 @@ public:
     static int GetLimitedTime();          //!< Get limited license's valid time.
     static license_State CheckLicense();  //!< Check if license is valid.
 
+	static bool IsNIServicing();         //!< Check if NI service is still running.
+
 private:
     NIServer();
     ~NIServer();

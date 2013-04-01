@@ -193,6 +193,11 @@ void NIServer::StopNIService()
 	}
 }
 
+bool NIServer::IsNIServicing()
+{
+	return isNIServing;
+}
+
 void NIServer::NIServiceEnded()
 {
 	isNIServing = false;

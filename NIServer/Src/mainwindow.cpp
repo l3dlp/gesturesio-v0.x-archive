@@ -27,6 +27,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(pServerWorker,SIGNAL(licenseChecked(QString)),this,SLOT(workerLicenseChecked(QString)));
 	connect(pServerWorker,SIGNAL(threadRunning()),this,SLOT(workerThreadRunning()));
+
+	// Hide buttons
+	pUi->startBtn->hide();
+	pUi->stopBtn->hide();
+
+	// Start NI Server automatically
+	startNIServer();
 }
 
 MainWindow::~MainWindow()
@@ -35,6 +42,16 @@ MainWindow::~MainWindow()
     delete pUi;
 }
 
+void MainWindow::closeEvent(QCloseEvent *event) 
+{
+	stopNIServer();	
+
+	// Wait until NI server is stopped
+	while (NIServer::IsNIServicing())
+	{
+		// wait
+	}
+}
 void MainWindow::workerLicenseChecked(QString stat)
 {
     int limitedTime;
