@@ -62,6 +62,8 @@ void NITcpServer::startRead()
 
 void NITcpServer::startWrite(QString echo)
 {
+	Logger::GetInstance()->Log("feedback to client:\n" + echo.toStdString());
+
     if(client != NULL)
         client->write(echo.toAscii(),echo.length());
 

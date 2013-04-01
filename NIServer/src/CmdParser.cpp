@@ -22,7 +22,7 @@ void CmdParser::parse(QString cmd)
 
     //qDebug(cmd.toAscii());
 
-    memset(&data,0,BUFFER_SIZE);
+    memset(&data,'\0',BUFFER_SIZE);
 
     nite::Point3f leftHandPos = NIEngine::GetInstance()->GetLeftHandPosProjective();
     nite::Point3f rightHandPos = NIEngine::GetInstance()->GetRightHandPosProjective();
