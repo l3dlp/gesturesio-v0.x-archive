@@ -42,11 +42,11 @@ void CmdParser::parse(QString cmd)
     if (cmd.compare("getCoordsX") == 0)
     {
         int length = 0;
-        length += sprintf_s(data,"<?xml version=\"1.0\" encoding=\"utf-8\">");
-        length += sprintf(data + length,"<coords>");
-        length += sprintf(data + length,"<leftHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"></leftHand>",leftHandPos.x,leftHandPos.y,leftHandPos.z);
-        length += sprintf(data + length,"<rightHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"></rightHand>",rightHandPos.x,rightHandPos.y,rightHandPos.z);
-        length += sprintf(data + length,"<headPos x=\"%f\" y=\"%f\" z=\"%f\"></headPos>",headPos.x,headPos.y,headPos.z);
+        length += sprintf_s(data,"<?xml version=\"1.0\" encoding=\"utf-8\">\n");
+        length += sprintf(data + length,"<coords>\n");
+        length += sprintf(data + length,"<leftHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"/>\n",leftHandPos.x,leftHandPos.y,leftHandPos.z);
+        length += sprintf(data + length,"<rightHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"/>\n",rightHandPos.x,rightHandPos.y,rightHandPos.z);
+        length += sprintf(data + length,"<headPos x=\"%f\" y=\"%f\" z=\"%f\"/>\n",headPos.x,headPos.y,headPos.z);
         sprintf(data + length,"</coords>");
     }
 
