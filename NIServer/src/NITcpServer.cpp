@@ -54,7 +54,8 @@ void NITcpServer::startRead()
 	{
 		client->read(buffer,client->bytesAvailable());
 		QString str(buffer);
-
+		std::string stdstr(buffer);
+		Logger::GetInstance()->Log("Cmd from client: " + stdstr);
 		emit queryAvaiable(str);
 	}
 }
