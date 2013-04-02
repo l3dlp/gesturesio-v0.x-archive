@@ -86,6 +86,9 @@
     <CustomBuild Include="..\..\..\Include\ServerWorker.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="..\..\..\Include\NITcpSocket.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeneratedFiles\ui_mainwindow.h">
@@ -251,6 +254,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\ThirdParty\Src\vjson\json.cpp">
       <Filter>Source Files\vjason</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_NITcpSocket.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_NITcpSocket.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Src\NITcpSocket.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

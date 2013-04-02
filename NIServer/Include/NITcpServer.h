@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QTcpServer>
 #include <QTcpSocket>
-#include "CmdParser.h"
+#include "NITcpSocket.h"
 
 //! Qt based class for Tcp service
 /*! It uses Qt's QTcpServer and QTcpSocket to:
@@ -27,21 +27,14 @@ public:
 
 private slots:
     void acceptConnection();
-    void startRead();
-    void startWrite(QString);
-    void clientDisconnected();
-
-signals:
-    void queryAvaiable(QString cmd);
+    void clientDisconnected(NITcpSocket* socket);
 
 private:
     QTcpServer server;
-    QTcpSocket* client;
-    CmdParser parser;
+	QList<NITcpSocket*> clientList;
+
     std::string clientIn;
     std::string clientOut;
-
-    static const int BUFFER_SIZE = 1024;
 };
 
 
