@@ -28,6 +28,10 @@ void CmdParser::parse(QString cmd)
     nite::Point3f rightHandPos = NIEngine::GetInstance()->GetRightHandPosProjective();
     nite::Point3f headPos = NIEngine::GetInstance()->GetHeadPosProjective();
 
+	nite::Point3f leftHandPos3D = NIEngine::GetInstance()->GetLeftHandPos();
+	nite::Point3f rightHandPos3D = NIEngine::GetInstance()->GetRightHandPos();
+	nite::Point3f headPos3D = NIEngine::GetInstance()->GetHeadPos();
+	
     // Retrieve gesture
     GestureInfo gesture = NIEngine::GetInstance()->GetGesture();
 
@@ -64,6 +68,18 @@ void CmdParser::parse(QString cmd)
         length += sprintf(data + length,"<headPos x=\"%f\" y=\"%f\" z=\"%f\"/>\n",headPos.x,headPos.y,headPos.z);
         sprintf(data + length,"</coords>");
     }
+
+	if (cmd.compare("get3dX") == 0)
+	{
+		int length = 0;
+
+		length += sprintf_s(data,"<?xml version=\"1.0\" encoding=\"utf-8\">\n");
+		length += sprintf(data + length,"<coords>\n");
+		length += sprintf(data + length,"<leftHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"/>\n",leftHand.c_str(),leftHandPos3D.x,leftHandPos3D.y,leftHandPos3D.z);
+		length += sprintf(data + length,"<rightHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"/>\n",rightHand.c_str(),rightHandPos3D.x,rightHandPos3D.y,rightHandPos3D.z);
+		length += sprintf(data + length,"<headPos x=\"%f\" y=\"%f\" z=\"%f\"/>\n",headPos3D.x,headPos3D.y,headPos3D.z);
+		sprintf(data + length,"</coords>");
+	}
 
     if (cmd.compare("getCoordsJ") == 0)
     {
