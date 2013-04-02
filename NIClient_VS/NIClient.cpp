@@ -31,7 +31,8 @@ float headPosX = 0;
 float headPosY = 0;
 float headPosZ = 0;
 
-std::string gesture;
+std::string leftHandgesture;
+std::string rightHandgesture;
 
 // Colors for the points
 float Colors[][3] =
@@ -67,7 +68,7 @@ const int CROPBOX_WIDTH = 400; // mm
 const int CROPBOX_HEIGHT = 300; // mm
 const int CROPBOX_DEPTH = 3500; // mm
 
-int g_dataFormat = 1;
+int g_dataFormat = 0;
 
 bool Query()
 {
@@ -101,7 +102,6 @@ bool Query()
 			int count = niSocket.GetBytesReceived();
 			memcpy(&data,niSocket.GetData(),count);
 
-			gesture.clear();
 			//printf("echo: %d %s\n",niSocket.GetBytesReceived(),data);
 
 			// parse the data according to the format we ask
@@ -120,11 +120,15 @@ bool Query()
 				std::vector<std::string> positions = parse(s);
 				std::vector<std::string>::iterator it;
 				it = positions.begin();
+				leftHandgesture = (*it).c_str();	
+				it++;
 				leftHandPosX = atof((*it).c_str());
 				it++;
 				leftHandPosY = atof((*it).c_str());
 				it++;
 				leftHandPosZ = atof((*it).c_str());
+				it++;
+				rightHandgesture = (*it).c_str();	
 				it++;
 				rightHandPosX = atof((*it).c_str());
 				it++;
@@ -137,8 +141,6 @@ bool Query()
 				headPosY = atof((*it).c_str());
 				it++;
 				headPosZ = atof((*it).c_str());
-				it++;
-				gesture = (*it).c_str();				
 			}
 		}
 
@@ -298,14 +300,30 @@ void glutDisplay (void)
 	DrawPoint(rx,ry,20,rightHandColor);
 
 	// Draw indication of gesture event
-	if (gesture == "click")
+	if (leftHandgesture != "NONE")
 	{
-		DrawPoint(500,150,50,3);
+		if (leftHandgesture == "click")
+		{
+			DrawPoint(500,150,50,3);
+		}
+		else if (leftHandgesture == "wave")
+		{
+			DrawPoint(200,150,50,3);
+		}
 	}
-	else if (gesture == "wave")
+
+	if (rightHandgesture != "NONE")
 	{
-		DrawPoint(200,150,50,3);
+		if (rightHandgesture == "click")
+		{
+			DrawPoint(500,150,50,5);
+		}
+		else if (rightHandgesture == "wave")
+		{
+			DrawPoint(200,150,50,5);
+		}
 	}
+
 
 #endif
 
