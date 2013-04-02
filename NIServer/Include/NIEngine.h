@@ -21,9 +21,17 @@ typedef enum
     SKEL_PROFILE_HANDS_AND_HEAD
 }NISkelProfile;
 
+typedef enum
+{
+	LEFT_HAND,
+	RIGHT_HAND,
+	UNKNOWN
+}GestureHandType;
+
 typedef struct
 {
     std::string name;
+	GestureHandType handType;
     uint64_t timeStamp;
 }GestureInfo;
 
@@ -156,7 +164,7 @@ public:
     nite::Point3f GetRightHandPosProjective(); //!< Get right hand's projective position.
     nite::Point3f GetHeadPosProjective();      //!< Get head's projective position.
     nite::Point3f GetHeadPos();                //!< Get head's real world position.
-    std::string GetGesture();                  //!< Get tracked gestures.
+    GestureInfo GetGesture();                  //!< Get tracked gestures.
 	static void MainProc(void* arg);           //!< Main procedure for dedicated thread.
 
 private:
@@ -171,6 +179,7 @@ private:
     void ReadGestureByID(const nite::Array<nite::GestureData>& gestures, nite::UserId activeID);
     nite::UserId FindGestureOwner(const nite::Point3f& handPoint,int xDist, int yDist); // xDist/yDist - represents distance from current hand point's x/y
     std::string GetNameFromGestureType(nite::GestureType type);
+	GestureHandType FindGestureHand(const nite::Point3f handPos);
     nite::Point3f WorldToProjective(const nite::Point3f& orig);
 	void ConstructFilters();
 	void DestructFilters();

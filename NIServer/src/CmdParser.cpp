@@ -29,23 +29,38 @@ void CmdParser::parse(QString cmd)
     nite::Point3f headPos = NIEngine::GetInstance()->GetHeadPosProjective();
 
     // Retrieve gesture
-    std::string gesture = NIEngine::GetInstance()->GetGesture();
+    GestureInfo gesture = NIEngine::GetInstance()->GetGesture();
+
+	string leftHand = "NONE";
+	string rightHand = "NONE";
+
+	if (gesture.handType == LEFT_HAND)
+	{
+		leftHand = gesture.name;
+	}
+
+	if (gesture.handType == RIGHT_HAND)
+	{
+		rightHand = gesture.name;
+	}
 
     if(cmd.compare("getCoordsT") == 0)
     {
         //printf("%f %f %f %f %f %f\n",leftHandPos.X,leftHandPos.Y,leftHandPos.Z,rightHandPos.X,rightHandPos.Y,rightHandPos.Z);
 
-        sprintf_s(data,"%f %f %f %f %f %f %f %f %f %s",leftHandPos.x,leftHandPos.y,leftHandPos.z,
-            rightHandPos.x,rightHandPos.y,rightHandPos.z,headPos.x,headPos.y,headPos.z,gesture.c_str());
+        sprintf_s(data,"%s %f %f %f %s %f %f %f %f %f %f %s",leftHand.c_str(),leftHandPos.x,leftHandPos.y,leftHandPos.z,
+															 rightHand.c_str(),rightHandPos.x,rightHandPos.y,rightHandPos.z,
+															 headPos.x,headPos.y,headPos.z);
     }
 
     if (cmd.compare("getCoordsX") == 0)
     {
         int length = 0;
+
         length += sprintf_s(data,"<?xml version=\"1.0\" encoding=\"utf-8\">\n");
         length += sprintf(data + length,"<coords>\n");
-        length += sprintf(data + length,"<leftHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"/>\n",gesture.c_str(),leftHandPos.x,leftHandPos.y,leftHandPos.z);
-        length += sprintf(data + length,"<rightHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"/>\n",gesture.c_str(),rightHandPos.x,rightHandPos.y,rightHandPos.z);
+        length += sprintf(data + length,"<leftHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"/>\n",leftHand.c_str(),leftHandPos.x,leftHandPos.y,leftHandPos.z);
+        length += sprintf(data + length,"<rightHand a=\"%s\" x=\"%f\" y=\"%f\" z=\"%f\"/>\n",rightHand.c_str(),rightHandPos.x,rightHandPos.y,rightHandPos.z);
         length += sprintf(data + length,"<headPos x=\"%f\" y=\"%f\" z=\"%f\"/>\n",headPos.x,headPos.y,headPos.z);
         sprintf(data + length,"</coords>");
     }

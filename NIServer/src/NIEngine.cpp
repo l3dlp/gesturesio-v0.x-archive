@@ -348,7 +348,7 @@ void NIEngine::ReadGestureByID(const nite::Array<nite::GestureData>& gestures, n
             if (ownerID == activeID)
             {
                 GestureInfo tmpGesture;
-
+				tmpGesture.handType = FindGestureHand(handPos);
                 nite::GestureType gType = gestures[i].getType();
                 tmpGesture.name = GetNameFromGestureType(gType);
                 tmpGesture.timeStamp = _latestTs;
@@ -358,6 +358,41 @@ void NIEngine::ReadGestureByID(const nite::Array<nite::GestureData>& gestures, n
             }
         }
     }
+}
+
+GestureHandType NIEngine::FindGestureHand(const nite::Point3f gestureHandPos)
+{
+	GestureHandType handType = UNKNOWN;
+
+	nite::Point3f leftHandPos;
+	nite::Point3f rightHandPos;
+
+	if (_jointMap[nite::JOINT_LEFT_HAND] == 1)
+	{
+		leftHandPos = _joint[nite::JOINT_LEFT_HAND].getPosition();
+	}
+	
+	if (_jointMap[nite::JOINT_RIGHT_HAND] == 1)
+	{
+		rightHandPos = _joint[nite::JOINT_RIGHT_HAND].getPosition();
+	}
+
+	if (_jointMap[nite::JOINT_LEFT_HAND] == 1 && _jointMap[nite::JOINT_RIGHT_HAND] == 1)
+	{
+		float distToLeftHand = sqrtf(leftHandPos.x * gestureHandPos.x + leftHandPos.y * gestureHandPos.y + leftHandPos.z * gestureHandPos.z);
+		float distToRightHand = sqrtf(rightHandPos.x * gestureHandPos.x + rightHandPos.y * gestureHandPos.y + rightHandPos.z * gestureHandPos.z);
+
+		if (distToLeftHand < distToRightHand)
+		{
+			handType = LEFT_HAND;
+		}
+		else
+		{
+			handType = RIGHT_HAND;
+		}
+	}
+
+	return handType;
 }
 
 void NIEngine::ManageTracker(const nite::Array<nite::UserData>& users, nite::UserId activeID)
@@ -632,9 +667,11 @@ nite::Point3f NIEngine::GetHeadPosProjective()
     return pos;
 }
 
-std::string NIEngine::GetGesture()
+GestureInfo NIEngine::GetGesture()
 {
-    std::string gesture = "NONE";
+    GestureInfo gesture;
+	gesture.name = "NONE";
+	gesture.handType = UNKNOWN;
 
     if(_gestures.empty() == false)
     {
@@ -644,9 +681,9 @@ std::string NIEngine::GetGesture()
 
         if ( timeDiff <= GESTURE_EXPIRED_TIME)
         {
-            gesture = tmpGesture.name;
+            gesture = tmpGesture;
         }
-        printf("td %f gesture %s\n",timeDiff,gesture.c_str());
+        printf("td %f gesture %s\n",timeDiff,gesture.name.c_str());
     }
 
     return gesture;
