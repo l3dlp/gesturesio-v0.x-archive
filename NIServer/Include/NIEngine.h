@@ -138,6 +138,7 @@ private:
     uint64_t _latestTs;
 	std::queue<Mission> _missions;
 	State _curState;
+	bool _trackingActiveUser;
 	void (*pStartedHandler)(bool);
 	void (*pStoppedHandler)();
 	void (*pEndedHandler)();
@@ -157,6 +158,7 @@ public:
 	/// @note It's blocking, will wait until the thread ends.
 	void RunThread();                      
 
+	bool TrackingActiveUser();                 //!< To see if engine is tracking the active user.
     void SetProfile(NISkelProfile profile);    //!< Set skeleton profile, to decide which joints to be tracked.
     nite::Point3f GetLeftHandPos();            //!< Get left hand's real world position
     nite::Point3f GetRightHandPos();           //!< Get right hand's real world position.

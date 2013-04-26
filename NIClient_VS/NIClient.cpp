@@ -68,7 +68,7 @@ const int CROPBOX_WIDTH = 400; // mm
 const int CROPBOX_HEIGHT = 300; // mm
 const int CROPBOX_DEPTH = 3500; // mm
 
-int g_dataFormat = 0;
+int g_dataFormat = 1;
 
 bool Query()
 {
@@ -108,6 +108,8 @@ bool Query()
 			if (dataFormat == 1)
 			{
 				// xml
+				printf(data);
+				printf("\n");
 			}
 			else if (dataFormat == 2)
 			{

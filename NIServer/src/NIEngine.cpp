@@ -205,7 +205,12 @@ void NIEngine::Read()
 			const nite::UserData* pUser = userTrackerFrame.getUserById(activeID);
 			if (pUser->getSkeleton().getState() == nite::SKELETON_TRACKED)
 			{
+				_trackingActiveUser = true;
 				ReadSkeleton(pUser);
+			}
+			else
+			{
+				_trackingActiveUser = false;
 			}
 		}
 	}
@@ -493,6 +498,8 @@ bool NIEngine::Init()
 	
 	Logger::GetInstance()->Log("Start to init NI engine");
 
+	_trackingActiveUser = false;
+
 	//clock_t tBegin = clock();
 	//clock_t tEnd = clock();
 	//double time = double(tEnd - tBegin)/CLOCKS_PER_SEC;
@@ -605,6 +612,11 @@ void NIEngine::SetProfile(NISkelProfile profile)
     default:
         break;
     }
+}
+
+bool NIEngine::TrackingActiveUser()
+{
+	return _trackingActiveUser;
 }
 
 nite::Point3f NIEngine::GetLeftHandPos()
