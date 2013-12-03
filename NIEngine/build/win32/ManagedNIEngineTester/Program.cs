@@ -20,7 +20,9 @@ namespace ManagedNIEngineTester
             engine.Started += new EventHandler(engine_Started);
             engine.Stopped += new EventHandler(engine_Stopped);
             engine.Ended += new EventHandler(engine_Ended);
-            Console.WriteLine("Engine running... \nPress 'S' to start \nPress 'T' to stop \nPress 'E' to end");
+            Console.WriteLine("Engine running... \nPress 'S' to start NI service \nPress 'T' to stop NI service \nPress 'E' to end NI service \nPress 'K' to start tcp service");
+
+            TcpServer server = new TcpServer();
 
             ConsoleKeyInfo cki;
             do 
@@ -43,6 +45,12 @@ namespace ManagedNIEngineTester
                 {
                     Console.WriteLine("\nEnding...");
                     engine.End();
+                }
+
+                if (cki.Key == ConsoleKey.K)
+                {
+                    Console.WriteLine("\nTcp Server running...");
+                    server.Start();
                 }
 
             } while (cki.Key != ConsoleKey.Escape);

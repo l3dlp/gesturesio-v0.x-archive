@@ -24,7 +24,10 @@
     <ClCompile Include="..\..\..\thirdparty\src\tinythread\tinythread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\wrapper\csharp\XnMNIEngine.cpp">
+    <ClCompile Include="..\..\..\wrapper\dotnet\XnMNIEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\wrapper\dotnet\XnMTcpServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,7 +44,10 @@
     <ClInclude Include="..\..\..\thirdparty\include\tinythread\tinythread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\wrapper\csharp\XnMNIEngine.h">
+    <ClInclude Include="..\..\..\wrapper\dotnet\XnMNIEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\wrapper\dotnet\XnMTcpServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

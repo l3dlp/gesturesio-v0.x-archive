@@ -77,14 +77,19 @@
     <ClCompile Include="..\..\..\src\NIEngine.cpp" />
     <ClCompile Include="..\..\..\src\Utils.cpp" />
     <ClCompile Include="..\..\..\thirdparty\src\tinythread\tinythread.cpp" />
-    <ClCompile Include="..\..\..\wrapper\csharp\XnMNIEngine.cpp" />
+    <ClCompile Include="..\..\..\wrapper\dotnet\XnMNIEngine.cpp" />
+    <ClCompile Include="..\..\..\wrapper\dotnet\XnMTcpServer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\NIEngine.h" />
     <ClInclude Include="..\..\..\include\OneEuroFilter.h" />
     <ClInclude Include="..\..\..\include\Utils.h" />
     <ClInclude Include="..\..\..\thirdparty\include\tinythread\tinythread.h" />
-    <ClInclude Include="..\..\..\wrapper\csharp\XnMNIEngine.h" />
+    <ClInclude Include="..\..\..\wrapper\dotnet\XnMNIEngine.h" />
+    <ClInclude Include="..\..\..\wrapper\dotnet\XnMTcpServer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
