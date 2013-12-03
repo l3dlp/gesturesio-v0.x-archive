@@ -98,7 +98,10 @@ void NIEngine::ProcessData()
 					_curState = Err;
 				}
 
-				pStartedHandler(res); // Report caller.
+				if (pStartedHandler)
+				{
+					pStartedHandler(res); // Report caller.
+				}
 			}
 			break;
 
@@ -107,7 +110,11 @@ void NIEngine::ProcessData()
 			{
 				Finalize();
 				_curState = Idle;
-				pStoppedHandler(); // Report caller.
+
+				if (pStoppedHandler)				
+				{
+					pStoppedHandler(); // Report caller.
+				}
 			}
 			break;
 
@@ -150,7 +157,11 @@ void NIEngine::ProcessData()
 	}
 
 	DestructFilters();
-	pEndedHandler(); // Report caller.
+	if (pEndedHandler != NULL)
+	{
+		pEndedHandler(); // Report caller.
+	}
+
 	Logger::GetInstance()->Log("NI engine thread process ends");
 }
 
