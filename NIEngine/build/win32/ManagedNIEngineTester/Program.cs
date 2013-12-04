@@ -52,6 +52,11 @@ namespace ManagedNIEngineTester
                     Console.WriteLine("\nTcp Server running...");
                     server.Start();
                 }
+                if (cki.Key == ConsoleKey.C)
+                {
+                    Console.WriteLine("\nTcp Server closing...");
+                    server.Stop();
+                }
 
             } while (cki.Key != ConsoleKey.Escape);
 

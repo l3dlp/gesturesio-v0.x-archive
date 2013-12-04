@@ -11,23 +11,30 @@ namespace TcpServerTester
     {
         static void Main(string[] args)
         {
-            TcpClient client = new TcpClient("127.0.0.1", 5678);
 
-            try
+            ConsoleKeyInfo cki;
+            do
             {
-                Stream s = client.GetStream();
-                StreamReader sr = new StreamReader(s);
-                StreamWriter sw = new StreamWriter(s);
-                sw.AutoFlush = true;
-                Console.WriteLine("Please enter the command:\n");
-                string cmd = Console.ReadLine();
-                sw.WriteLine(cmd);
-                s.Close();
-            }
-            finally
-            {
-                client.Close();
-            }
+                cki = Console.ReadKey();
+
+                TcpClient client = new TcpClient("127.0.0.1", 5678);
+                try
+                {
+                    Stream s = client.GetStream();
+                    StreamReader sr = new StreamReader(s);
+                    StreamWriter sw = new StreamWriter(s);
+                    sw.AutoFlush = true;
+                    Console.WriteLine("Please enter the command:\n");
+                    string cmd = Console.ReadLine();
+                    sw.WriteLine(cmd);
+                    s.Close();
+                }
+                finally
+                {
+                    client.Close();
+                }
+
+            } while (cki.Key != ConsoleKey.Escape);
 
             Console.ReadKey();
         }

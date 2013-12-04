@@ -1,6 +1,7 @@
 #pragma once
 
 using namespace System::Net::Sockets;
+using namespace System::Threading;
 
 namespace ManagedNI
 {
@@ -18,6 +19,8 @@ namespace ManagedNI
 
 	private:
 		Socket^ listener;
+		Thread^ serviceThread;
+		bool inService;
 
 		void Service();
 	};
