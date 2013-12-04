@@ -23,6 +23,7 @@ namespace ManagedNIEngineTester
             Console.WriteLine("Engine running... \nPress 'S' to start NI service \nPress 'T' to stop NI service \nPress 'E' to end NI service \nPress 'K' to start tcp service");
 
             TcpServer server = new TcpServer();
+            server.MsgReceived += new TcpServer.MsgEventHandler(server_MsgReceived);
 
             ConsoleKeyInfo cki;
             do 
@@ -60,6 +61,11 @@ namespace ManagedNIEngineTester
 
             } while (cki.Key != ConsoleKey.Escape);
 
+        }
+
+        static string server_MsgReceived(string message)
+        {
+            return "ok";
         }
 
         static void engine_Ended(object sender, EventArgs e)

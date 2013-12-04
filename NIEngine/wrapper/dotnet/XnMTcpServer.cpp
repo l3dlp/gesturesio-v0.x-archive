@@ -75,10 +75,15 @@ namespace ManagedNI
 				StreamReader^ sr = gcnew StreamReader(ns);
 				StreamWriter^ sw = gcnew StreamWriter(ns);
 				sw->AutoFlush = true;
-				String^ cmd = sr->ReadLine();
-				Console::Write(cmd);
+				String^ msg = sr->ReadLine();
+
+				Console::Write(msg);
 				Console::Write("\n");
-				sw->WriteLine(cmd); // echo
+				String^ res = MsgReceived(msg); // Process the message
+				Console::Write(res);
+				Console::Write("\n");
+
+				sw->WriteLine(msg); // echo
 
 				sr->Close();
 				sw->Close();
