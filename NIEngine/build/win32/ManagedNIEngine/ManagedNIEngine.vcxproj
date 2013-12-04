@@ -74,6 +74,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\MsgParser.cpp" />
     <ClCompile Include="..\..\..\src\NIEngine.cpp" />
     <ClCompile Include="..\..\..\src\Utils.cpp" />
     <ClCompile Include="..\..\..\thirdparty\src\tinythread\tinythread.cpp" />
@@ -81,6 +82,7 @@
     <ClCompile Include="..\..\..\wrapper\dotnet\XnMTcpServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\include\MsgParser.h" />
     <ClInclude Include="..\..\..\include\NIEngine.h" />
     <ClInclude Include="..\..\..\include\OneEuroFilter.h" />
     <ClInclude Include="..\..\..\include\Utils.h" />

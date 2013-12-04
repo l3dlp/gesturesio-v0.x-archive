@@ -30,6 +30,9 @@
     <ClCompile Include="..\..\..\wrapper\dotnet\XnMTcpServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\MsgParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\NIEngine.h">
@@ -48,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\wrapper\dotnet\XnMTcpServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\MsgParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
