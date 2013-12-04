@@ -65,7 +65,8 @@ namespace ManagedNIEngineTester
 
         static string server_MsgReceived(string message)
         {
-            return "ok";
+            XnMMsgParser parser = new XnMMsgParser();
+            return parser.Parse(message);
         }
 
         static void engine_Ended(object sender, EventArgs e)

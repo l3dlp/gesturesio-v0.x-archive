@@ -13,10 +13,9 @@ namespace TcpServerTester
         {
 
             ConsoleKeyInfo cki;
+            cki = Console.ReadKey();
             do
             {
-                cki = Console.ReadKey();
-
                 TcpClient client = new TcpClient("127.0.0.1", 5678);
                 try
                 {
@@ -25,8 +24,9 @@ namespace TcpServerTester
                     StreamWriter sw = new StreamWriter(s);
                     sw.AutoFlush = true;
                     Console.WriteLine("Please enter the command:\n");
-                    string cmd = Console.ReadLine();
-                    sw.WriteLine(cmd);
+                    //string cmd = Console.ReadLine();
+                    //sw.WriteLine(cmd);
+                    sw.WriteLine("getCoordsT");
                     s.Close();
                 }
                 finally
