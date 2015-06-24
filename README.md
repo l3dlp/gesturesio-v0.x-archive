@@ -1,3 +1,6 @@
-# ActiveDOOH #
+# Gestures.IO v0.x #
 
-SAAS Platform Apps
+First tries, using OpenCV, OpenNI, and MS-Dos raw text socket flow.
+
+Mostly obsolete now, but everything is keeped freely shared for studying.
+
