@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/sockets/!svn/ver/333/tags/Release_clsockets_1_4_0/WindowsBuild
+END
+win_install.iss
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/sockets/!svn/ver/333/tags/Release_clsockets_1_4_0/WindowsBuild/win_install.iss
+END
+clsocket.sln
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/sockets/!svn/ver/333/tags/Release_clsockets_1_4_0/WindowsBuild/clsocket.sln
+END
+win_install.exe
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/sockets/!svn/ver/333/tags/Release_clsockets_1_4_0/WindowsBuild/win_install.exe
+END
+clsocket.vcproj
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/sockets/!svn/ver/333/tags/Release_clsockets_1_4_0/WindowsBuild/clsocket.vcproj
+END
